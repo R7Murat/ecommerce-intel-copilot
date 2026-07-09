@@ -19,3 +19,6 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/copilot"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
