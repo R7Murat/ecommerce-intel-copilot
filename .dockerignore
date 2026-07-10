@@ -1,0 +1,9 @@
+.venv
+.git
+.pytest_cache
+__pycache__
+notebooks
+yedek
+eval/last_run_errors.log
+data/answer_cache.json
+.env
