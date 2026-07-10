@@ -5,8 +5,10 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 DB_PATH = REPO_ROOT / "data" / "products.db"
 DB_URI = f"file:{DB_PATH}?mode=ro"
 
-PRIMARY_MODEL = "gemini/gemini-2.5-flash"
-FALLBACK_MODEL = "groq/llama-3.3-70b-versatile"
+PRIMARY_MODEL = "groq/llama-3.3-70b-versatile"
+FALLBACK_MODEL = "gemini/gemini-2.5-flash"
+# PRIMARY_MODEL = "gemini/gemini-2.5-flash"
+# FALLBACK_MODEL = "groq/llama-3.3-70b-versatile"
 
 SCHEMA_DESCRIPTION = """
 Tables:

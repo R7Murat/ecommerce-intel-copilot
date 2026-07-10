@@ -1,3 +1,12 @@
+| 2026-07-10 | 2 | 92% | — | — | 100% |
+
+- sql_09 FAIL analyzed: LLM returned parent_asin instead of title for "which product" —
+  semantically correct (same product, same count 1434); kept as FAIL rather than loosening
+  the matcher (strict matching prevents masking real errors).
+- Gemini 2.5 Flash free tier measured at 20 requests/day (5/min) — far below planning
+  assumptions. Primary/fallback swapped: Groq (1,000/day) now primary. The litellm
+  abstraction made this a two-line change.
+
 # STATUS — updated: 2026-07-10
 
 Active phase: 2 (Evaluation Harness) — pending gate approval | Completed: Phase 0, Phase 1
