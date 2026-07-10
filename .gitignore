@@ -5,3 +5,4 @@ __pycache__/
 data/*.db
 data/chroma/
 .ipynb_checkpoints/
+eval/last_run_errors.log
