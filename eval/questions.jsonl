@@ -1,0 +1,30 @@
+{"id": "sql_01", "type": "sql", "expected_route": "sql", "question": "How many products are in the database?", "reference_sql": "SELECT COUNT(*) FROM products"}
+{"id": "sql_02", "type": "sql", "expected_route": "sql", "question": "What is the average price of products that have a known price?", "reference_sql": "SELECT ROUND(AVG(price), 2) FROM products WHERE price IS NOT NULL"}
+{"id": "sql_03", "type": "sql", "expected_route": "sql", "question": "Which store has the most products?", "reference_sql": "SELECT store FROM products WHERE store IS NOT NULL GROUP BY store ORDER BY COUNT(*) DESC LIMIT 1"}
+{"id": "sql_04", "type": "sql", "expected_route": "sql", "question": "How many reviews were written in 2022?", "reference_sql": "SELECT COUNT(*) FROM reviews WHERE strftime('%Y', ts, 'unixepoch') = '2022'"}
+{"id": "sql_05", "type": "sql", "expected_route": "sql", "question": "What are the 3 stores with the highest average product rating, among stores with at least 10 products?", "reference_sql": "SELECT store FROM products WHERE store IS NOT NULL GROUP BY store HAVING COUNT(*) >= 10 ORDER BY AVG(average_rating) DESC LIMIT 3"}
+{"id": "sql_06", "type": "sql", "expected_route": "sql", "question": "What fraction of all reviews are verified purchases?", "reference_sql": "SELECT ROUND(AVG(verified), 3) FROM reviews"}
+{"id": "sql_07", "type": "sql", "expected_route": "sql", "question": "What is the title and price of the most expensive product?", "reference_sql": "SELECT title, price FROM products WHERE price IS NOT NULL ORDER BY price DESC LIMIT 1"}
+{"id": "sql_08", "type": "sql", "expected_route": "sql", "question": "How many products have no price information?", "reference_sql": "SELECT COUNT(*) FROM products WHERE price IS NULL"}
+{"id": "sql_09", "type": "sql", "expected_route": "sql", "question": "Which product has the most reviews, and how many does it have?", "reference_sql": "SELECT p.title, COUNT(r.review_id) AS n FROM products p JOIN reviews r ON r.parent_asin = p.parent_asin GROUP BY p.parent_asin ORDER BY n DESC LIMIT 1"}
+{"id": "sql_10", "type": "sql", "expected_route": "sql", "question": "What was the average review rating in 2020?", "reference_sql": "SELECT ROUND(AVG(rating), 2) FROM reviews WHERE strftime('%Y', ts, 'unixepoch') = '2020'"}
+{"id": "sql_11", "type": "sql", "expected_route": "sql", "question": "How many distinct stores are there?", "reference_sql": "SELECT COUNT(DISTINCT store) FROM products WHERE store IS NOT NULL"}
+{"id": "sql_12", "type": "sql", "expected_route": "sql", "question": "Which year had the most reviews?", "reference_sql": "SELECT strftime('%Y', ts, 'unixepoch') AS y FROM reviews GROUP BY y ORDER BY COUNT(*) DESC LIMIT 1"}
+{"id": "rag_01", "type": "rag", "expected_route": "rag", "question": "What do users complain about regarding ice makers?"}
+{"id": "rag_02", "type": "rag", "expected_route": "rag", "question": "What do reviewers say about the taste of water from replacement filters?"}
+{"id": "rag_03", "type": "rag", "expected_route": "rag", "question": "What installation problems do users mention for dryer parts?"}
+{"id": "rag_04", "type": "rag", "expected_route": "rag", "question": "What do users say about the compatibility of coffee filters with Keurig machines?"}
+{"id": "rag_05", "type": "rag", "expected_route": "rag", "question": "How do reviewers describe the durability of refrigerator water filters?"}
+{"id": "rag_06", "type": "rag", "expected_route": "rag", "question": "What shipping or packaging issues do reviewers mention?"}
+{"id": "rag_07", "type": "rag", "expected_route": "rag", "question": "What do users say about their customer service experiences?"}
+{"id": "rag_08", "type": "rag", "expected_route": "rag", "question": "What safety concerns do reviewers raise about their appliances?"}
+{"id": "rag_09", "type": "rag", "expected_route": "rag", "question": "What do reviewers say about value for money of replacement filters?"}
+{"id": "rag_10", "type": "rag", "expected_route": "rag", "question": "What problems do users report with product fit or sizing?"}
+{"id": "rag_11", "type": "rag", "expected_route": "rag", "question": "What positive experiences do users share about ice makers?"}
+{"id": "rag_12", "type": "rag", "expected_route": "rag", "question": "What do reviewers say about noise levels of their appliances?"}
+{"id": "rej_01", "type": "reject", "expected_route": "reject", "question": "What will the weather be like tomorrow?"}
+{"id": "rej_02", "type": "reject", "expected_route": "reject", "question": "Who won the 2022 World Cup?"}
+{"id": "rej_03", "type": "reject", "expected_route": "reject", "question": "Write me a poem about the ocean."}
+{"id": "rej_04", "type": "reject", "expected_route": "reject", "question": "What is the best stock to buy right now?"}
+{"id": "rej_05", "type": "reject", "expected_route": "reject", "question": "How do I reset my iPhone?"}
+{"id": "rej_06", "type": "reject", "expected_route": "reject", "question": "Translate good morning into French."}
