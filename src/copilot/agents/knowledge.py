@@ -36,6 +36,6 @@ def run_knowledge(question: str, where: dict | None = None) -> dict:
         )
         answer = ask_llm(SYSTEM_PROMPT, f"Context:\n{context}\n\nQuestion: {question}")
         sources = sorted({m["parent_asin"] for m in metas})
-        return {"answer": answer, "sources": sources, "error": None}
+        return {"answer": answer, "sources": sources, "context": context, "error": None}
     except Exception as e:
-        return {"answer": None, "sources": [], "error": str(e)}
+        return {"answer": None, "sources": [], "context": "", "error": str(e)}
