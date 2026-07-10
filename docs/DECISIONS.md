@@ -58,3 +58,33 @@ in top-k results. The threshold trades a small recall loss for cleaner retrieval
 **Rejected alternative:** Embedding everything and relying on ranking to bury short
 texts. Rejected because it spends compute on valueless documents and measurably
 pollutes small-k results.
+
+## D5 — Custom LLM-as-judge instead of the RAGAS library
+
+**Decision:** Implement faithfulness and answer-relevance as ~60 lines of custom
+LLM-as-judge code (RAGAS-style metrics) rather than integrating the RAGAS library.
+
+**Rationale:** The metrics' core logic is simple (claim-support counting; question-answer
+alignment scoring). A custom implementation adds zero dependencies, runs on the existing
+provider abstraction, and keeps every scoring step transparent and explainable. The judge
+parser was subsequently hardened (JSON-first parsing, 0-1 clamping) after a live scoring
+bug — a fix that would have been opaque inside a library.
+
+**Rejected alternative:** The RAGAS library. Rejected because it pulls in the LangChain
+dependency chain, requires extra configuration to route its judge through our free-tier
+providers, and turns the metric internals into a black box for a project whose goal
+includes demonstrating evaluation literacy.
+
+## D6 — Groq as the primary LLM provider
+
+**Decision:** Swap the provider roles: Groq (Llama 3.3 70B) is primary; Gemini 2.5 Flash
+is the fallback.
+
+**Rationale:** Measured free-tier limits contradicted planning assumptions: Gemini 2.5
+Flash allows 20 requests/day (5/min), while Groq allows 1,000/day (30/min). Evaluation
+runs alone exceed Gemini's daily quota. During the Phase 2 run, Groq carried effectively
+all traffic through the fallback path; making it primary removes a guaranteed 429 round
+trip from every call. The litellm abstraction made this a two-line configuration change.
+
+**Rejected alternative:** Keeping Gemini primary and throttling to its limits. Rejected
+because 5 requests/min would make evaluation runs take hours and cripple interactive use.
