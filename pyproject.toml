@@ -15,6 +15,9 @@ dependencies = [
     "python-dotenv>=1.0",
 ]
 
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
@@ -22,5 +25,6 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/copilot"]
 
-[project.optional-dependencies]
-dev = ["pytest>=8.0"]
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+markers = ["llm: tests that call a live LLM (cost/latency; deselect with -m 'not llm')"]
