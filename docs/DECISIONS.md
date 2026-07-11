@@ -88,3 +88,16 @@ trip from every call. The litellm abstraction made this a two-line configuration
 
 **Rejected alternative:** Keeping Gemini primary and throttling to its limits. Rejected
 because 5 requests/min would make evaluation runs take hours and cripple interactive use.
+
+## D7 — Deadline-driven scope cuts (backlogged, not cancelled)
+
+**Decision:** For the delivery deadline: (a) replace Langfuse with a built-in trace panel
+in the Streamlit UI (agent path, per-step info from graph state); (b) keep the AWS
+GitHub Actions workflow in the repo but run the provision-validate-destroy cycle from
+local Terraform only.
+
+**Rationale:** Observability and IaC evidence goals are still met with lower integration
+risk; both full versions remain in the backlog.
+
+**Rejected alternative:** Compressing evaluation or testing instead — rejected because
+measurement discipline is this project's core differentiator.

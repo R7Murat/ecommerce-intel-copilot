@@ -1,3 +1,11 @@
+## Acceptance Evidence — Phase 3
+- Deterministic analytics tools (rating_trend, review_volume, sentiment_summary,
+  top_movers) with 4 unit tests on a hand-computed fixture.
+- Critic agent: runtime groundedness gate, fail-safe parsing, 4 tests (2 live-LLM, marked).
+- Graph finalized: analyst + hybrid routes; critic retry loop (max 1) live on rag/hybrid.
+- Three multi-step evidence questions pass with full traces; re-run of the Phase 2 suite
+  holds all thresholds (SQL 92%, trajectory 100%, faith 1.00, rel 0.87).
+
 # STATUS — updated: 2026-07-10
 
 Active phase: 3 (Market Analyst + Critic) — pending gate approval | Completed: Phase 0, Phase 1, Phase 2
