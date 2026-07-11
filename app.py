@@ -64,4 +64,4 @@ with gr.Blocks(title="E-Commerce Product Intelligence Copilot") as demo:
     btn.click(ask, inputs=q, outputs=[answer, path])
     q.submit(ask, inputs=q, outputs=[answer, path])
 
-demo.launch()
+demo.launch(ssr_mode=False)
