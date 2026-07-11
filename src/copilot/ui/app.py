@@ -1,7 +1,19 @@
 """Streamlit UI: question -> multi-agent answer, with agent-path trace panel."""
 import time
+from pathlib import Path
 
 import streamlit as st
+from huggingface_hub import hf_hub_download, snapshot_download
+
+# --- Fetch data on first startup (cloud deploys have no local data) ---
+DATA_DIR = Path("data")
+if not (DATA_DIR / "products.db").exists():
+    hf_hub_download(repo_id="R7Murat/ecommerce-intel-data", filename="products.db",
+                    repo_type="dataset", local_dir=DATA_DIR)
+if not (DATA_DIR / "chroma").exists():
+    snapshot_download(repo_id="R7Murat/ecommerce-intel-data", allow_patterns="chroma/**",
+                      repo_type="dataset", local_dir=DATA_DIR)
+# ----------------------------------------------------------------------
 
 from copilot.graph import build_graph
 
