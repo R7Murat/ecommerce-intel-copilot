@@ -1,4 +1,9 @@
 """Streamlit UI: question -> multi-agent answer, with agent-path trace panel."""
+
+import sys
+from pathlib import Path as _P
+sys.path.insert(0, str(_P(__file__).resolve().parents[2]))
+
 import time
 from pathlib import Path
 
