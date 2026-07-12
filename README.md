@@ -82,5 +82,4 @@ Tests: `python -m pytest -m "not llm"` (fast) · `python -m pytest` (includes li
 
 - [docs/DECISIONS.md](docs/DECISIONS.md) — every significant decision with rationale and rejected alternatives
 - [SYSTEM_CARD.md](SYSTEM_CARD.md) — capabilities, limitations, and development notes
-- [docs/AWS_DEPLOYMENT_PLAN.md](docs/AWS_DEPLOYMENT_PLAN.md) — Terraform provision-validate-destroy plan (scheduled)
 - [notebooks/01_data_pipeline.ipynb](notebooks/01_data_pipeline.ipynb) — EDA, schema design, and a reproduced type-integrity bug (pandas nullable Int64 → SQLite BLOB)

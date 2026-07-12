@@ -1,6 +1,6 @@
 # STATUS — updated: 2026-07-11
 
-Active phase: 5b (AWS — scheduled per docs/AWS_DEPLOYMENT_PLAN.md) | Completed: Phase 0–4, 5a, 6
+Active phase: — (all planned phases complete) | Completed: Phase 0–6 (5b deferred)
 
 ## Acceptance Evidence — Phase 5a (Deployment)
 - Live demo on Streamlit Community Cloud:
@@ -14,7 +14,7 @@ Active phase: 5b (AWS — scheduled per docs/AWS_DEPLOYMENT_PLAN.md) | Completed
 ## Acceptance Evidence — Phase 6 (Documentation)
 - README with architecture, evaluation table, safety properties, data attribution, quickstart.
 - SYSTEM_CARD.md: capabilities, limitations, honesty behavior, provenance, development notes.
-- docs/DECISIONS.md D1–D8 complete; docs/AWS_DEPLOYMENT_PLAN.md ready for execution.
+- docs/DECISIONS.md D1–D8 complete; AWS deployment plan prepared (kept as an offline working document)
 
 ## Acceptance Evidence — Phase 4 (UI)
 - Streamlit UI with agent-path trace panel, latency metric, critic verdict, example prompts.
@@ -54,7 +54,7 @@ Active phase: 5b (AWS — scheduled per docs/AWS_DEPLOYMENT_PLAN.md) | Completed
   pivoted to Streamlit Community Cloud in ~40 minutes thanks to the existing Streamlit UI.
 
 ## Backlog
-- Execute docs/AWS_DEPLOYMENT_PLAN.md (provision-validate-destroy evidence).
+- Execute the AWS provision-validate-destroy plan (offline document)
 - Standalone docs/data_quality_report.md (findings live in the notebook).
 - Honest-refusal eval category; unify ROUTER_PROMPT into config; Langfuse tracing;
   name failing model in [llm] logs; GitHub Actions workflow for AWS deploy.
