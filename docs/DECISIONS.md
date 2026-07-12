@@ -101,3 +101,18 @@ risk; both full versions remain in the backlog.
 
 **Rejected alternative:** Compressing evaluation or testing instead — rejected because
 measurement discipline is this project's core differentiator.
+
+## D8 — Deployment platform: Streamlit Community Cloud
+
+**Decision:** Serve the live demo on Streamlit Community Cloud, with the prepared data
+hosted in a public HF dataset repo and downloaded on first boot.
+
+**Rationale:** Mid-project, Hugging Face's free tier stopped offering Gradio/CPU-basic
+Spaces to free accounts (forum-confirmed rollout the same week). Streamlit Cloud is
+free without a card, deploys directly from GitHub, and our primary UI was already
+Streamlit — the pivot cost ~40 minutes. Separating code (git) from data (dataset repo)
+also turned a platform storage limit into a cleaner architecture.
+
+**Rejected alternatives:** HF ZeroGPU workaround (dummy @spaces.GPU probe) — untested
+against a moving policy; Modal/Render/Cloud Run — new learning curve, RAM limits, or
+card requirements under a same-day deadline.
