@@ -6,3 +6,6 @@ data/*.db
 data/chroma/
 .ipynb_checkpoints/
 eval/last_run_errors.log
+infra/terraform/terraform.tfvars
+infra/terraform/.terraform/
+infra/terraform/*.tfstate*
