@@ -116,3 +116,29 @@ also turned a platform storage limit into a cleaner architecture.
 **Rejected alternatives:** HF ZeroGPU workaround (dummy @spaces.GPU probe) — untested
 against a moving policy; Modal/Render/Cloud Run — new learning curve, RAM limits, or
 card requirements under a same-day deadline.
+
+## D9 — App Runner deployment: Gradio over Streamlit (WebSocket incompatibility)
+
+**Decision:** Deploy the Gradio interface (`app.py`) to AWS App Runner instead of the
+Streamlit UI, despite Streamlit being the primary interface used for local development
+and the Streamlit Community Cloud demo.
+
+**Rationale:** The first App Runner deployment served the Streamlit app successfully at
+the HTTP level (`curl` returned a healthy `200 OK` with full page HTML) but the page
+never rendered live content in a browser. Diagnosis (DNS check, `curl -v`, browser
+DevTools Console) isolated the failure to the WebSocket handshake
+(`wss://.../_stcore/stream`) that Streamlit requires for live updates — rejected by
+App Runner's reverse proxy (Envoy). This is a platform-level constraint, not an
+application bug: the same Streamlit code runs correctly on Streamlit Community Cloud,
+whose proxy layer handles the WebSocket upgrade differently.
+
+Gradio's default (non-queued) mode uses plain HTTP request/response per interaction
+rather than a persistent WebSocket, which sidesteps the incompatibility entirely and
+was confirmed working with a live hybrid-route query on the App Runner URL.
+
+**Rejected alternative:** Migrating to ECS Fargate + an Application Load Balancer,
+which natively supports WebSocket. Rejected for this cycle because it would roughly
+double the Terraform surface (VPC, subnets, ALB, target groups) for a same-day
+deployment window; the Gradio interface was already built and tested (Phase 5a), so
+switching it was a five-minute code change versus an hour of new infrastructure.
+Documented here as the correct next step if Streamlit-on-App-Runner is required later.

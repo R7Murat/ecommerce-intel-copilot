@@ -83,3 +83,4 @@ Tests: `python -m pytest -m "not llm"` (fast) · `python -m pytest` (includes li
 - [docs/DECISIONS.md](docs/DECISIONS.md) — every significant decision with rationale and rejected alternatives
 - [SYSTEM_CARD.md](SYSTEM_CARD.md) — capabilities, limitations, and development notes
 - [notebooks/01_data_pipeline.ipynb](notebooks/01_data_pipeline.ipynb) — EDA, schema design, and a reproduced type-integrity bug (pandas nullable Int64 → SQLite BLOB)
+- [docs/aws-deployment.md](docs/aws-deployment.md) — AWS App Runner deployment evidence (provision-validate-destroy cycle)
