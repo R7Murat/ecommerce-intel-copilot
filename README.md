@@ -6,6 +6,7 @@
 **Five specialized agents. One supervisor. Zero unverified claims.**
 
 ![Architecture](docs/img/architecture-overview.png)
+![Deployment](docs/img/deployment-architecture.png)
 [![Live Demo](https://img.shields.io/badge/Live_Demo-Streamlit_Cloud-FF4B4B?logo=streamlit)](https://ecommerce-intel-copilot-u3hzffazrtbv4ayzfqhzet.streamlit.app/)
 [![AWS Verified](https://img.shields.io/badge/AWS-Deployed_%26_Verified-FF9900?logo=amazonwebservices)](docs/aws-deployment.md)
 [![Tests](https://img.shields.io/badge/tests-19_passing-brightgreen)](tests/)
