@@ -1,5 +1,10 @@
 # AWS Deployment Evidence (Phase 5b)
 
+> **Note:** The App Runner URL visible in the screenshots is intentionally no longer
+> live — destroying all resources was the final, verified step of this cycle
+> (provision → validate → **destroy**). The permanent live demo runs on
+> [Streamlit Community Cloud](https://ecommerce-intel-copilot-u3hzffazrtbv4ayzfqhzet.streamlit.app/).
+
 Full provision → validate → destroy cycle on AWS, executed per
 `AWS_DEPLOYMENT_PLAN.md` (kept as an offline working document).
 
