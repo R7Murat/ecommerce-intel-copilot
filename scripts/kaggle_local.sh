@@ -18,6 +18,7 @@ mkdir -p data && cp "$DB" data/products.db && rm -rf data/chroma && cp -r "$CHRO
 pip install -q -r requirements.txt
 
 # Ollama: local only, model pulled once per session (~13 GB).
+command -v zstd >/dev/null || { apt-get update -qq && apt-get install -y -qq zstd; }  # installer needs it
 command -v ollama >/dev/null || curl -fsSL https://ollama.com/install.sh | sh
 export OLLAMA_NO_CLOUD=1 OLLAMA_CONTEXT_LENGTH=8192
 nohup ollama serve > "$OUT/ollama.log" 2>&1 &
