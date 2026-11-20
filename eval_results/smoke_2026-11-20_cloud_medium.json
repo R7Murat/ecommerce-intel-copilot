@@ -1,0 +1,197 @@
+{
+  "kind": "smoke",
+  "date": "2026-11-20",
+  "commit": "33d2ba9",
+  "dirty_tree": true,
+  "profile": "cloud",
+  "primary_model": "groq/openai/gpt-oss-20b",
+  "reasoning_effort": "medium",
+  "n": 10,
+  "note": "10 questions: a quota and sanity check, not a quality estimate",
+  "totals": {
+    "route_ok": 10,
+    "llm_calls": 26,
+    "input_tokens": 7736,
+    "output_tokens": 5524,
+    "fallback_calls": 0,
+    "error_spans": 0,
+    "latency_median_s": 5.18,
+    "latency_max_s": 15.94
+  },
+  "provider_ratelimit_after_run": {
+    "x-ratelimit-limit-requests": "1000",
+    "x-ratelimit-limit-tokens": "8000",
+    "x-ratelimit-remaining-requests": "923",
+    "x-ratelimit-remaining-tokens": "7112",
+    "x-ratelimit-reset-requests": "1h50m52.8s",
+    "x-ratelimit-reset-tokens": "6.66s"
+  },
+  "rows": [
+    {
+      "id": "smk_sql_01",
+      "expected_route": "sql",
+      "route": "sql",
+      "route_ok": true,
+      "latency_s": 2.0,
+      "llm_calls": 3,
+      "input_tokens": 589,
+      "output_tokens": 272,
+      "cost_usd_list_price": 0.000126,
+      "fallback_calls": 0,
+      "error_spans": 0,
+      "critic": null,
+      "tool_s": {
+        "sql_query": 0.19
+      }
+    },
+    {
+      "id": "smk_sql_02",
+      "expected_route": "sql",
+      "route": "sql",
+      "route_ok": true,
+      "latency_s": 1.57,
+      "llm_calls": 3,
+      "input_tokens": 615,
+      "output_tokens": 245,
+      "cost_usd_list_price": 0.00012,
+      "fallback_calls": 0,
+      "error_spans": 0,
+      "critic": null,
+      "tool_s": {
+        "sql_query": 0.07
+      }
+    },
+    {
+      "id": "smk_rag_01",
+      "expected_route": "rag",
+      "route": "rag",
+      "route_ok": true,
+      "latency_s": 5.18,
+      "llm_calls": 3,
+      "input_tokens": 1748,
+      "output_tokens": 1526,
+      "cost_usd_list_price": 0.00057,
+      "fallback_calls": 0,
+      "error_spans": 0,
+      "critic": "grounded",
+      "tool_s": {}
+    },
+    {
+      "id": "smk_rag_02",
+      "expected_route": "rag",
+      "route": "rag",
+      "route_ok": true,
+      "latency_s": 2.1,
+      "llm_calls": 3,
+      "input_tokens": 990,
+      "output_tokens": 696,
+      "cost_usd_list_price": 0.000283,
+      "fallback_calls": 0,
+      "error_spans": 0,
+      "critic": "grounded",
+      "tool_s": {}
+    },
+    {
+      "id": "smk_ana_01",
+      "expected_route": "analyst",
+      "route": "analyst",
+      "route_ok": true,
+      "latency_s": 9.93,
+      "llm_calls": 2,
+      "input_tokens": 628,
+      "output_tokens": 486,
+      "cost_usd_list_price": 0.000193,
+      "fallback_calls": 0,
+      "error_spans": 0,
+      "critic": null,
+      "tool_s": {
+        "top_movers": 7.81,
+        "review_volume": 0.8
+      }
+    },
+    {
+      "id": "smk_ana_02",
+      "expected_route": "analyst",
+      "route": "analyst",
+      "route_ok": true,
+      "latency_s": 9.67,
+      "llm_calls": 2,
+      "input_tokens": 618,
+      "output_tokens": 328,
+      "cost_usd_list_price": 0.000145,
+      "fallback_calls": 0,
+      "error_spans": 0,
+      "critic": null,
+      "tool_s": {
+        "top_movers": 7.96,
+        "review_volume": 0.49
+      }
+    },
+    {
+      "id": "smk_hyb_01",
+      "expected_route": "hybrid",
+      "route": "hybrid",
+      "route_ok": true,
+      "latency_s": 15.94,
+      "llm_calls": 4,
+      "input_tokens": 1070,
+      "output_tokens": 924,
+      "cost_usd_list_price": 0.000357,
+      "fallback_calls": 0,
+      "error_spans": 0,
+      "critic": "ungrounded",
+      "tool_s": {
+        "top_movers": 10.78,
+        "rating_trend": 0.0
+      }
+    },
+    {
+      "id": "smk_hyb_02",
+      "expected_route": "hybrid",
+      "route": "hybrid",
+      "route_ok": true,
+      "latency_s": 11.61,
+      "llm_calls": 4,
+      "input_tokens": 1061,
+      "output_tokens": 972,
+      "cost_usd_list_price": 0.000371,
+      "fallback_calls": 0,
+      "error_spans": 0,
+      "critic": "ungrounded",
+      "tool_s": {
+        "top_movers": 8.8,
+        "rating_trend": 0.0
+      }
+    },
+    {
+      "id": "smk_rej_01",
+      "expected_route": "reject",
+      "route": "reject",
+      "route_ok": true,
+      "latency_s": 0.51,
+      "llm_calls": 1,
+      "input_tokens": 209,
+      "output_tokens": 34,
+      "cost_usd_list_price": 2.6e-05,
+      "fallback_calls": 0,
+      "error_spans": 0,
+      "critic": null,
+      "tool_s": {}
+    },
+    {
+      "id": "smk_rej_02",
+      "expected_route": "reject",
+      "route": "reject",
+      "route_ok": true,
+      "latency_s": 0.18,
+      "llm_calls": 1,
+      "input_tokens": 208,
+      "output_tokens": 41,
+      "cost_usd_list_price": 2.8e-05,
+      "fallback_calls": 0,
+      "error_spans": 0,
+      "critic": null,
+      "tool_s": {}
+    }
+  ]
+}

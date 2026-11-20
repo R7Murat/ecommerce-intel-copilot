@@ -142,3 +142,33 @@ double the Terraform surface (VPC, subnets, ALB, target groups) for a same-day
 deployment window; the Gradio interface was already built and tested (Phase 5a), so
 switching it was a five-minute code change versus an hour of new infrastructure.
 Documented here as the correct next step if Streamlit-on-App-Runner is required later.
+
+## D10 — Reasoning effort `low` for gpt-oss-20b (provisional)
+
+**Decision:** The primary model runs with `reasoning_effort=low` (config default,
+`REASONING_EFFORT` in `.env` overrides; empty means provider default). The fallback
+keeps its own default.
+
+**Rationale:** The rule was written before measuring (`docs/STATUS_v3.md`, 1.4): pick the
+lowest level with 10/10 routes, no SQL-route errors, and RAG/hybrid `grounded` count at
+most one below `medium`. On the 10-question smoke set (not golden), cloud profile,
+2026-11-20, no fallback calls in any run:
+
+| effort | routes | SQL errors | grounded (RAG+hybrid) | output tokens | median latency |
+|---|---|---|---|---|---|
+| low | 10/10 | 0 | 2 | 1,994 | 3.2 s |
+| medium | 10/10 | 0 | 2 | 5,524 | 5.2 s |
+| high | 10/10 | 0 | 1 | 13,482 | 5.0 s |
+
+Sources: `eval_results/smoke_2026-11-20_cloud_{low,medium,high}.json`. `low` meets the
+rule and cuts output tokens about 2.8x versus `medium`, which matters because the Groq
+free tier allows 8,000 tokens per minute (response headers). `high` returned one empty
+RAG answer.
+
+**Limits:** Ten questions cannot show a quality difference; "no SQL error" means the query
+ran, not that the answer was right. The decision is re-checked in Faz 2 with a paired
+comparison on the golden set. The local profile (Ollama) is measured on Kaggle.
+
+**Rejected alternative:** Provider default (`medium`). Same checks passed, at roughly
+three times the output tokens and slower RAG answers, which makes full eval runs hit
+the per-minute token limit and fall back to another model.

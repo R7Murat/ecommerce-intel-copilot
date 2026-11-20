@@ -1,7 +1,10 @@
 """Deterministic analytics over the reviews database. No LLM involvement."""
 import sqlite3
 
+from copilot.observability import traced_node
 
+
+@traced_node("execute_tool", "rating_trend")
 def rating_trend(conn: sqlite3.Connection, parent_asin: str) -> list[tuple]:
     """Yearly (year, avg_rating, review_count) for one product."""
     return [
@@ -14,6 +17,7 @@ def rating_trend(conn: sqlite3.Connection, parent_asin: str) -> list[tuple]:
     ]
 
 
+@traced_node("execute_tool", "review_volume")
 def review_volume(conn: sqlite3.Connection, parent_asin: str | None = None) -> list[tuple]:
     """Yearly (year, count), for one product or the whole corpus."""
     if parent_asin:
@@ -25,6 +29,7 @@ def review_volume(conn: sqlite3.Connection, parent_asin: str | None = None) -> l
     return conn.execute(q).fetchall()
 
 
+@traced_node("execute_tool", "sentiment_summary")
 def sentiment_summary(conn: sqlite3.Connection, parent_asin: str) -> dict:
     """Rating distribution and verified-purchase ratio for one product."""
     dist = dict(conn.execute(
@@ -38,6 +43,7 @@ def sentiment_summary(conn: sqlite3.Connection, parent_asin: str) -> dict:
     return {"distribution": dist, "verified_ratio": ratio}
 
 
+@traced_node("execute_tool", "top_movers")
 def top_movers(conn: sqlite3.Connection, n: int = 5) -> list[tuple]:
     """Products with the largest rating change between their first and last year.
     Returns (parent_asin, first_year_avg, last_year_avg, change), sorted by |change|."""

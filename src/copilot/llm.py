@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 from dotenv import load_dotenv
 from litellm import completion
 
-from copilot.config import API_BASE, FALLBACK_MODEL, PRIMARY_MODEL, PROFILE
+from copilot.config import API_BASE, FALLBACK_MODEL, PRIMARY_MODEL, PROFILE, REASONING_EFFORT
 from copilot.observability import set_attrs, span
 
 load_dotenv()
@@ -22,11 +22,14 @@ def _list_price(resp) -> float | None:
 
 
 def _call(model: str, system: str, user: str, is_fallback: bool) -> str:
+    effort = None if is_fallback else REASONING_EFFORT  # fallback keeps its own default
+    extra = {"reasoning_effort": effort} if effort else {}
     with span("chat", model):
         set_attrs({
             "gen_ai.request.model": model,
             "copilot.profile": PROFILE,
             "copilot.fallback": is_fallback,
+            "copilot.reasoning_effort": effort,
             "server.address": urlparse(API_BASE).hostname if API_BASE else None,
         })
         resp = completion(
@@ -37,6 +40,7 @@ def _call(model: str, system: str, user: str, is_fallback: bool) -> str:
             ],
             temperature=0,
             api_base=API_BASE,  # None in cloud profile: provider default
+            **extra,
         )
         usage = getattr(resp, "usage", None)
         price = _list_price(resp)

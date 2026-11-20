@@ -162,3 +162,55 @@ def test_langfuse_exporter_args():
     assert args["endpoint"] == "http://localhost:3000/api/public/otel/v1/traces"
     assert args["headers"]["Authorization"] == "Basic cGstbGYtYTpzay1sZi1i"  # pk-lf-a:sk-lf-b
     assert langfuse_exporter_args({**env, "LANGFUSE_SECRET_KEY": ""}) is None
+
+
+def test_analytics_calls_are_traced():
+    """B12: deterministic analytics show up as execute_tool spans under their caller."""
+    import sqlite3
+    from copilot.tools import analytics
+
+    conn = sqlite3.connect(":memory:")
+    conn.execute("CREATE TABLE reviews (parent_asin TEXT, rating REAL, ts INTEGER)")
+    conn.executemany("INSERT INTO reviews VALUES (?,?,?)",
+                     [("A1", 5.0, 1609459200), ("A1", 3.0, 1641038400)])
+
+    @traced_node("invoke_agent", "hybrid")
+    def agent():
+        return analytics.top_movers(conn, n=1), analytics.rating_trend(conn, "A1")
+
+    assert agent()[0] == [("A1", 5.0, 3.0, -2.0)]
+    spans = by_name()
+    for name in ("execute_tool top_movers", "execute_tool rating_trend"):
+        assert spans[name].parent.span_id == spans["invoke_agent hybrid"].context.span_id
+
+
+def test_reasoning_effort_only_on_primary(monkeypatch):
+    seen = {}
+
+    def fake(model, **kw):
+        seen[model] = kw.get("reasoning_effort")
+        if model == llm.PRIMARY_MODEL:
+            raise ConnectionError("primary down")
+        return fake_resp("ok", model=model)
+
+    monkeypatch.setattr(llm, "REASONING_EFFORT", "low")
+    monkeypatch.setattr(llm, "FALLBACK_MODEL", "gemini/gemini-2.5-flash")
+    monkeypatch.setattr(llm, "completion", fake)
+    llm.ask_llm("s", "u")
+    assert seen == {llm.PRIMARY_MODEL: "low", "gemini/gemini-2.5-flash": None}
+    assert by_name()[f"chat {llm.PRIMARY_MODEL}"].attributes["copilot.reasoning_effort"] == "low"
+
+
+def test_otlp_file_exporter_roundtrip(tmp_path):
+    """Kaggle path: spans written to a file decode back to the same OTLP spans."""
+    import base64
+    from opentelemetry.proto.collector.trace.v1.trace_service_pb2 import ExportTraceServiceRequest
+    from copilot.observability import OtlpFileExporter
+
+    with span("invoke_agent", "copilot"):
+        pass
+    path = tmp_path / "traces.otlp"
+    OtlpFileExporter(str(path)).export(EXPORTER.get_finished_spans())
+    req = ExportTraceServiceRequest.FromString(base64.b64decode(path.read_text().strip()))
+    names = [s.name for rs in req.resource_spans for ss in rs.scope_spans for s in ss.spans]
+    assert names == ["invoke_agent copilot"]

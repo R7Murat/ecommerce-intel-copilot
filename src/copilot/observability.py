@@ -66,12 +66,34 @@ def langfuse_exporter_args(env=os.environ) -> dict | None:
             "headers": {"Authorization": f"Basic {token}"}}
 
 
+class OtlpFileExporter:
+    """Append each span batch as one base64 OTLP protobuf line, for hosts that cannot
+    reach Langfuse (Kaggle); scripts/replay_traces.py sends the file later."""
+
+    def __init__(self, path: str):
+        self.path = path
+
+    def export(self, spans):
+        from opentelemetry.exporter.otlp.proto.common.trace_encoder import encode_spans
+        from opentelemetry.sdk.trace.export import SpanExportResult
+        with open(self.path, "a", encoding="ascii") as f:
+            f.write(base64.b64encode(encode_spans(spans).SerializeToString()).decode() + "\n")
+        return SpanExportResult.SUCCESS
+
+    def shutdown(self):
+        pass
+
+    def force_flush(self, timeout_millis: int = 30000) -> bool:
+        return True
+
+
 def setup_tracing() -> bool:
-    """Export spans over OTLP/HTTP to Langfuse (LANGFUSE_* vars) or to the standard
-    OTEL_EXPORTER_OTLP_* target; no-op when neither is configured."""
+    """Export spans to COPILOT_TRACES_FILE, else over OTLP/HTTP to Langfuse (LANGFUSE_*
+    vars) or the standard OTEL_EXPORTER_OTLP_* target; no-op when none is configured."""
     global _configured
     lf = langfuse_exporter_args()
-    if _configured or not (lf or os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT")):
+    file_path = os.getenv("COPILOT_TRACES_FILE")
+    if _configured or not (file_path or lf or os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT")):
         return _configured
     from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
     from opentelemetry.sdk.resources import Resource
@@ -79,7 +101,8 @@ def setup_tracing() -> bool:
     from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
     provider = TracerProvider(resource=Resource.create({"service.name": "copilot"}))
-    provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter(**(lf or {}))))
+    exporter = OtlpFileExporter(file_path) if file_path else OTLPSpanExporter(**(lf or {}))
+    provider.add_span_processor(BatchSpanProcessor(exporter))
     trace.set_tracer_provider(provider)
     _configured = True
     return True

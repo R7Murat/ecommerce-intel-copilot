@@ -29,6 +29,10 @@ _p = PROFILES[PROFILE]
 PRIMARY_MODEL = os.getenv("PRIMARY_MODEL", _p["primary"])
 FALLBACK_MODEL = os.getenv("FALLBACK_MODEL", _p["fallback"])
 API_BASE = os.getenv("OLLAMA_API_BASE", _p["api_base"]) if PROFILE == "local" else None
+# gpt-oss reasoning level for the primary model (D10); empty = provider default
+REASONING_EFFORT = os.getenv("REASONING_EFFORT", "low").strip().lower() or None
+if REASONING_EFFORT not in {None, "low", "medium", "high"}:
+    raise ValueError(f"REASONING_EFFORT must be low, medium or high, got {REASONING_EFFORT!r}")
 
 
 def check_local_profile(primary: str, fallback: str, api_base: str | None,

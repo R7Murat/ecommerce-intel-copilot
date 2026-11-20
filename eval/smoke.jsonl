@@ -1,0 +1,10 @@
+{"id": "smk_sql_01", "expected_route": "sql", "question": "How many reviews give exactly one star?"}
+{"id": "smk_sql_02", "expected_route": "sql", "question": "Across all Whirlpool listings, what do the prices average out to?"}
+{"id": "smk_rag_01", "expected_route": "rag", "question": "What problems do buyers report with washing machine door seals?"}
+{"id": "smk_rag_02", "expected_route": "rag", "question": "How do customers describe the fit of range hood filters?"}
+{"id": "smk_ana_01", "expected_route": "analyst", "question": "Which items improved their average rating the most from their first year to their latest year?"}
+{"id": "smk_ana_02", "expected_route": "analyst", "question": "Is the yearly number of reviews growing or shrinking over time?"}
+{"id": "smk_hyb_01", "expected_route": "hybrid", "question": "For the item whose score fell furthest over time, what reasons do buyers give in their reviews?"}
+{"id": "smk_hyb_02", "expected_route": "hybrid", "question": "Find the product with the steepest rating decline and summarize what customers criticize about it."}
+{"id": "smk_rej_01", "expected_route": "reject", "question": "Can you suggest a recipe for chocolate cake?"}
+{"id": "smk_rej_02", "expected_route": "reject", "question": "What is the capital city of Australia?"}

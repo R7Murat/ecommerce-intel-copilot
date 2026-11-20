@@ -27,7 +27,9 @@ Bu dosya v3 çalışmasının kararlarını, kanıtlarını ve açık maddelerin
 | 1.1 Profiller ve yerel koruma | Tamam | `COPILOT_PROFILE=cloud/local`; `local`'de fallback yok, açılışta fail-closed kontrol (`OLLAMA_NO_CLOUD=1`, loopback adres, Ollama modeli, `-cloud` yasak). `tests/test_profiles.py`: koruma kapatılınca 7/7 test kırıldı, açıkken `pytest` 34 passed. B7: `pysqlite3-binary; sys_platform == "linux"`. |
 | 1.2 `@traced_node`, span'ler, B5 | Tamam | `observability.py`: `invoke_agent` (kök `copilot`, supervisor, ajanlar, critic), `retrieval`, `chat`, `execute_tool`. Chat span'inde istenen/dönen model, `copilot.fallback`, profil, token, liste fiyatı (B5). Prompt/cevap metni yazılmıyor. Hybrid soru tek ağaç (testte). Dekoratör kapatılınca 4 test kırıldı; `pytest` 42 passed. Canlı Groq çağrısında token ve maliyet dolu. |
 | 1.3 Langfuse (Docker Compose, OTLP) | Tamam (cloud profil) | `infra/langfuse/`: Langfuse v4.80.0 compose, sadece 3000 ve 9090 `127.0.0.1`'de açık, gateway çıkarıldı, telemetri kapalı. Gizli değerler `init_env.py` ile üretildi, gitignore'lu `.env`'lerde, ekrana basılmadı; proje ve anahtarlar headless init ile. `setup_tracing` `LANGFUSE_*` ile OTLP adresini ve Basic auth başlığını kuruyor. `scripts/trace_demo.py` (golden set dışı soru) ile canlı Groq koşusu: tek trace, kök `copilot` → supervisor, hybrid → retrieval, critic; 4 GENERATION, hepsinde model, token, maliyet ve süre dolu (API'den okundu). Local profil Kaggle adımında (1.4). |
-| 1.4 Smoke set, reasoning effort, Kaggle GPU | Bekliyor | — |
+| 1.4 Smoke set, reasoning effort, Kaggle GPU | Cloud kısmı tamam; Kaggle Murat'ta | `eval/smoke.jsonl`: 10 soru, her rotadan 2, golden set ve demo örnekleriyle en yüksek Jaccard 0,43. `scripts/smoke.py` önbelleği atlıyor, kotayı Groq yanıt başlığından okuyor, TPM dolunca bekliyor. Reasoning effort `low` (D10, kural önceden yazıldı; low/medium/high hepsi 10/10 rota, fallback 0). B12 kök nedeni bulundu ve izleniyor. Kaggle: `scripts/kaggle_local.sh` trace'leri `COPILOT_TRACES_FILE`'a yazar, `scripts/replay_traces.py` laptopta Langfuse'a gönderir (yerelde uçtan uca denendi: span Langfuse API'de göründü). `pytest` 46 passed. |
+
+**1.4 reasoning effort karar kuralı (ölçümden önce yazıldı, 2026-11-20):** `low`, `medium`, `high` aynı 10 soruluk smoke set'le, TPM beklemesi açık koşulur. Fallback'e düşen satırlar karşılaştırma dışında tutulur ve sayısı raporlanır. Seçim: (1) rota 10/10, (2) SQL rotasında hata yok, (3) RAG ve hybrid critic `grounded` sayısı `medium`'dan en fazla 1 eksik koşullarını sağlayan **en düşük** seviye. Hiçbiri sağlamazsa `medium`. 10 soru kalite kanıtı değildir; karar Faz 2'de golden set üzerinde eşli karşılaştırmayla doğrulanır.
 
 ## Kararlar
 
@@ -65,8 +67,10 @@ Bu dosya v3 çalışmasının kararlarını, kanıtlarını ve açık maddelerin
 | B8 | Rate limit ve soru uzunluğu sınırı yok | Kota tükenmesiyle demo kilitlenebilir | Faz 4 |
 | B9 | Ortamda TLS denetimi var (`self-signed certificate in certificate chain`) | Yerel profil ve Docker'da bağlantı sorunu çıkabilir | Docker kısmı kapandı (1.3: imajlar indi, OTLP localhost); yerel profil Kaggle'da (1.4) |
 | B10 | Eski eval'de judge = üreten model (`run_eval.py` judge'ı `ask_llm` ile çağırıyor) | Faithfulness 1.00 ve relevance 0.87 self-judged; yanlılık riski | Faz 2: Gemini judge, fallback kapalı |
-| B11 | Critic iki hybrid sorunun ikisinde de `ungrounded` dedi (`trace_demo.py`, 2 örnek) | Hybrid cevapları sistematik reddediliyor olabilir; 2 örnek kanıt değil | Faz 2: golden set üzerinde critic kararı dağılımı |
-| B12 | Hybrid düğümü 19,7 sn, alt span toplamı ~8 sn; ~12 sn izsiz | Gecikme kaynağı görünmüyor (SQL analitik çağrıları span'siz olabilir, ölçülmedi) | Faz 1.4: analitik çağrılara span, smoke set'te ölç |
+| B11 | Critic hybrid sorularda hep `ungrounded` dedi (`trace_demo.py` 2/2, smoke low/medium/high 6/6; aynı 2 soru) | Hybrid cevapları sistematik reddediliyor olabilir; 2 örnek kanıt değil | Faz 2: golden set üzerinde critic kararı dağılımı |
+| B12 | Hybrid düğümü 19,7 sn, alt span toplamı ~8 sn; ~12 sn izsiz | Gecikme kaynağı görünmüyordu | Kapandı (1.4): kök neden `top_movers` (441.857 yorumu tarayan sorgu; doğrudan ölçüm soğuk 11,1 sn, sıcak 4,4 sn; `rating_trend` 0,00 sn). Dört analitik fonksiyon `execute_tool` span'iyle izleniyor, test kırmızı/yeşil doğrulandı. |
+| B13 | `top_movers` her analyst/hybrid sorusunda yeniden hesaplanıyor (4–11 sn), veri salt okunur ve sonuç sabit | Demo gecikmesinin en büyük kalemi | Faz 4 (demo gecikmesi): ön hesaplanmış tablo ya da süreç içi önbellek; önce/sonra ölçümle |
+| B14 | Groq ücretsiz katman dakikalık token limiti 8.000 (yanıt başlığı); 10 soruluk smoke 17.389 token, tek RAG sorusu retry ile 6.780 token | Eval koşusu sınırı aşınca primary sessizce Gemini fallback'e düşüyor (smoke'ta 3 çağrı) | Faz 2: eval'de TPM beklemesi ve fallback kapalı |
 
 ## Güvenlik taraması (2026-11-20)
 
@@ -84,6 +88,6 @@ Bu dosya v3 çalışmasının kararlarını, kanıtlarını ve açık maddelerin
 
 ## Sıradaki adım
 
-Faz 1.4: smoke set (10 soru, golden set dışı) ile kota kontrolü, reasoning effort kararı (`DECISIONS.md`), B12 için analitik çağrılara span, Kaggle GPU'da Ollama ile `gpt-oss:20b` ve local profil trace'i. Açık: B2. Faz 1 sonunda code-review.
+Faz 1.4 Kaggle kısmı (Murat): `products.db` ve `chroma/` ile Kaggle dataset'i, GPU T4 x2 ve Internet açık notebook'ta `scripts/kaggle_local.sh low`; çıktı `traces_local.otlp` ve `smoke_*_local_low.json` laptopa indirilir, `scripts/replay_traces.py` ile Langfuse'a gönderilir. Sonra Faz 1 kapısı: iki profilde hybrid ağacı Langfuse'ta, code-review, kapı commit'i. Açık: B2, B11 (smoke'ta hybrid critic 6/6 `ungrounded`), B13, B14. Faz 4 notu: Input/Output metni PII maskelemeyle birlikte; dashboard widget'ları ve aylık maliyet/gecikme özeti.
 
 Langfuse'u başlatma: `cd infra/langfuse && docker compose up -d`, arayüz http://localhost:3000 (giriş bilgisi `infra/langfuse/.env` içinde `LANGFUSE_INIT_USER_*`).
