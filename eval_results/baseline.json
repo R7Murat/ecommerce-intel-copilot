@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "kind": "historical_record",
+  "note": "Transcribed from STATUS.md and git history; no new evaluation run was made for this file.",
+  "recorded_at": "2026-11-20",
+  "measured_at": "2026-07-11",
+  "source": {
+    "file": "STATUS.md",
+    "row": "Evaluation History, 2026-07-11, Phase 3",
+    "recorded_in_commit": "d4d1e16f050a327338430d8c1bac9f54b93fe4bd",
+    "code_state": "Judge harness (eval/run_eval.py) was first committed in the same commit; exact working tree at measurement time is not recoverable."
+  },
+  "models": {
+    "generator": "groq/llama-3.3-70b-versatile",
+    "fallback": "gemini/gemini-2.5-flash",
+    "judge": "same as generator (eval/run_eval.py calls ask_llm); fallback use was not logged",
+    "generator_status": "retired by Groq on 2026-08-16"
+  },
+  "golden_set": {
+    "file": "eval/questions.jsonl",
+    "n": 30,
+    "by_route": { "sql": 12, "rag": 12, "reject": 6 },
+    "routes_not_covered": ["analyst", "hybrid"],
+    "sha256_git_blob_lf": "e3e592a6ab1791ff54f0ade6008b5d0d9b4c0e8b534df1085cf0a1d7e951510c"
+  },
+  "metrics": {
+    "sql_execution_accuracy": { "n": 12, "passed": 11, "score": 0.92, "threshold": 0.80 },
+    "trajectory_accuracy": {
+      "n": 30, "passed": 30, "score": 1.00, "threshold": 0.85,
+      "scope": "3-class router (sql/rag/reject), component-level"
+    },
+    "out_of_scope_rejection": {
+      "n": 6, "passed": 6, "score": 1.00, "threshold": 1.00,
+      "derived_from": "reject subset of trajectory_accuracy"
+    },
+    "faithfulness": {
+      "n": 12, "score": 1.00, "threshold": 0.80,
+      "judge_note": "self-judged (judge = generator)"
+    },
+    "relevance": {
+      "n": 12, "score": 0.87, "threshold": 0.75,
+      "judge_note": "self-judged (judge = generator)"
+    }
+  },
+  "history": [
+    {
+      "measured_at": "2026-07-10",
+      "phase": 2,
+      "source": "STATUS.md Evaluation History",
+      "scores": { "sql_execution_accuracy": 0.92, "trajectory_accuracy": 1.00, "faithfulness": 1.00, "relevance": 0.91 }
+    }
+  ],
+  "caveats": [
+    "B1: a demo example question equals golden rag_01; another is close to sql_05 (Jaccard 0.59).",
+    "B2: local Python 3.11.9 vs live demo Python 3.14.",
+    "B10: judge model equals generator model; faithfulness and relevance are self-judged.",
+    "Golden questions rag_03 and rag_10 were edited in the same commit that recorded these scores; whether the edit followed a look at results is unknown.",
+    "No per-question result file exists for this run.",
+    "Single run; no confidence intervals."
+  ]
+}
