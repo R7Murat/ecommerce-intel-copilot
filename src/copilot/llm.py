@@ -39,11 +39,13 @@ def _call(model: str, system: str, user: str, is_fallback: bool) -> str:
             api_base=API_BASE,  # None in cloud profile: provider default
         )
         usage = getattr(resp, "usage", None)
+        price = _list_price(resp)
         set_attrs({
             "gen_ai.response.model": getattr(resp, "model", None),
             "gen_ai.usage.input_tokens": getattr(usage, "prompt_tokens", None),
             "gen_ai.usage.output_tokens": getattr(usage, "completion_tokens", None),
-            "copilot.cost_usd_list_price": _list_price(resp),
+            "copilot.cost_usd_list_price": price,
+            "gen_ai.usage.cost": price,  # read by Langfuse as cost; still list price, not billed
         })
         return resp.choices[0].message.content
 

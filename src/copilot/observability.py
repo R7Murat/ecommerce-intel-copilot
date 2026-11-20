@@ -3,6 +3,7 @@
 Span names follow the GenAI semantic conventions: "<operation> <name>".
 No prompt or answer text is recorded, only metadata.
 """
+import base64
 import contextlib
 import functools
 import os
@@ -54,10 +55,23 @@ def mark_error(message: str) -> None:
     trace.get_current_span().set_status(Status(StatusCode.ERROR, message[:200]))
 
 
+def langfuse_exporter_args(env=os.environ) -> dict | None:
+    """OTLP endpoint and Basic auth header for Langfuse; None unless all three vars are set."""
+    host, pk, sk = (env.get(k) for k in
+                    ("LANGFUSE_HOST", "LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY"))
+    if not (host and pk and sk):
+        return None
+    token = base64.b64encode(f"{pk}:{sk}".encode()).decode()
+    return {"endpoint": f"{host.rstrip('/')}/api/public/otel/v1/traces",
+            "headers": {"Authorization": f"Basic {token}"}}
+
+
 def setup_tracing() -> bool:
-    """Export spans over OTLP/HTTP when OTEL_EXPORTER_OTLP_ENDPOINT is set; else no-op."""
+    """Export spans over OTLP/HTTP to Langfuse (LANGFUSE_* vars) or to the standard
+    OTEL_EXPORTER_OTLP_* target; no-op when neither is configured."""
     global _configured
-    if _configured or not os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT"):
+    lf = langfuse_exporter_args()
+    if _configured or not (lf or os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT")):
         return _configured
     from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
     from opentelemetry.sdk.resources import Resource
@@ -65,7 +79,7 @@ def setup_tracing() -> bool:
     from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
     provider = TracerProvider(resource=Resource.create({"service.name": "copilot"}))
-    provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter()))
+    provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter(**(lf or {}))))
     trace.set_tracer_provider(provider)
     _configured = True
     return True

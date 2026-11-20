@@ -31,7 +31,7 @@ st.caption("Multi-agent RAG over Amazon Appliances reviews (2003–2023). "
 
 @st.cache_resource
 def get_graph():
-    setup_tracing()  # no-op unless OTEL_EXPORTER_OTLP_ENDPOINT is set
+    setup_tracing()  # no-op unless LANGFUSE_* or OTEL_EXPORTER_OTLP_ENDPOINT is set
     return build_graph()
 
 

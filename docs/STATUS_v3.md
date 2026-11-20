@@ -26,7 +26,7 @@ Bu dosya v3 çalışmasının kararlarını, kanıtlarını ve açık maddelerin
 | --- | --- | --- |
 | 1.1 Profiller ve yerel koruma | Tamam | `COPILOT_PROFILE=cloud/local`; `local`'de fallback yok, açılışta fail-closed kontrol (`OLLAMA_NO_CLOUD=1`, loopback adres, Ollama modeli, `-cloud` yasak). `tests/test_profiles.py`: koruma kapatılınca 7/7 test kırıldı, açıkken `pytest` 34 passed. B7: `pysqlite3-binary; sys_platform == "linux"`. |
 | 1.2 `@traced_node`, span'ler, B5 | Tamam | `observability.py`: `invoke_agent` (kök `copilot`, supervisor, ajanlar, critic), `retrieval`, `chat`, `execute_tool`. Chat span'inde istenen/dönen model, `copilot.fallback`, profil, token, liste fiyatı (B5). Prompt/cevap metni yazılmıyor. Hybrid soru tek ağaç (testte). Dekoratör kapatılınca 4 test kırıldı; `pytest` 42 passed. Canlı Groq çağrısında token ve maliyet dolu. |
-| 1.3 Langfuse (Docker Compose, OTLP) | Sırada | — |
+| 1.3 Langfuse (Docker Compose, OTLP) | Tamam (cloud profil) | `infra/langfuse/`: Langfuse v4.80.0 compose, sadece 3000 ve 9090 `127.0.0.1`'de açık, gateway çıkarıldı, telemetri kapalı. Gizli değerler `init_env.py` ile üretildi, gitignore'lu `.env`'lerde, ekrana basılmadı; proje ve anahtarlar headless init ile. `setup_tracing` `LANGFUSE_*` ile OTLP adresini ve Basic auth başlığını kuruyor. `scripts/trace_demo.py` (golden set dışı soru) ile canlı Groq koşusu: tek trace, kök `copilot` → supervisor, hybrid → retrieval, critic; 4 GENERATION, hepsinde model, token, maliyet ve süre dolu (API'den okundu). Local profil Kaggle adımında (1.4). |
 | 1.4 Smoke set, reasoning effort, Kaggle GPU | Bekliyor | — |
 
 ## Kararlar
@@ -46,6 +46,9 @@ Bu dosya v3 çalışmasının kararlarını, kanıtlarını ve açık maddelerin
 | 2026-11-20 | `local` profilde fallback kapalı | Her fallback makineden çıkar; yerel modda hata gizlenmez, yükseltilir. |
 | 2026-11-20 | Maliyet `copilot.cost_usd_list_price` olarak, litellm'in çağrı anındaki hesabından | Groq ücretsiz katmanda gerçek ödeme 0; alan adı liste fiyatı olduğunu söylüyor. `completion_cost(resp)` Groq'ta `groq/` öneki düştüğü için fiyat bulamıyordu. |
 | 2026-11-20 | Span'lere prompt ve cevap metni yazılmıyor | Soru kaydı ve PII maskeleme Faz 4'te; o zamana kadar sadece metadata. |
+| 2026-11-20 | Langfuse'ta sadece web (3000) ve MinIO S3 (9090) host'a açık, ikisi de `127.0.0.1` | İç servislerin host portu gereksiz; 9000 ve 5432 laptopta başka süreçlerle çakıştı. Daha küçük saldırı yüzeyi. |
+| 2026-11-20 | Maliyet ayrıca `gen_ai.usage.cost` olarak yazılıyor | Langfuse maliyeti bu alandan okuyor, fiyat tablosunda model yok. Değer yine liste fiyatı; ödenen tutar 0. |
+| 2026-11-20 | Langfuse v4 sorgusu `/api/public/v2/observations` | v4'te `/api/public/traces` 404 dönüyor. |
 | 2026-11-20 | Heyet ve direktör uzlaşırsa adım onay beklemeden uygulanır | Murat'ın talimatı; uzlaşma yoksa sorulur. |
 
 ## Bulgular (Faz 0 sırasında)
@@ -60,8 +63,10 @@ Bu dosya v3 çalışmasının kararlarını, kanıtlarını ve açık maddelerin
 | B6 | `llm` marker'lı canlı testler varsayılan `pytest` koşusunda çalışıyor | Her test koşusu kota harcar | Faz 5 (CI) |
 | B7 | `requirements.txt` içindeki `pysqlite3-binary` Windows'ta kurulmuyor | Yerel kurulum kırılıyor | Kapandı (1.1) |
 | B8 | Rate limit ve soru uzunluğu sınırı yok | Kota tükenmesiyle demo kilitlenebilir | Faz 4 |
-| B9 | Ortamda TLS denetimi var (`self-signed certificate in certificate chain`) | Yerel profil ve Docker'da bağlantı sorunu çıkabilir | Faz 1 |
+| B9 | Ortamda TLS denetimi var (`self-signed certificate in certificate chain`) | Yerel profil ve Docker'da bağlantı sorunu çıkabilir | Docker kısmı kapandı (1.3: imajlar indi, OTLP localhost); yerel profil Kaggle'da (1.4) |
 | B10 | Eski eval'de judge = üreten model (`run_eval.py` judge'ı `ask_llm` ile çağırıyor) | Faithfulness 1.00 ve relevance 0.87 self-judged; yanlılık riski | Faz 2: Gemini judge, fallback kapalı |
+| B11 | Critic iki hybrid sorunun ikisinde de `ungrounded` dedi (`trace_demo.py`, 2 örnek) | Hybrid cevapları sistematik reddediliyor olabilir; 2 örnek kanıt değil | Faz 2: golden set üzerinde critic kararı dağılımı |
+| B12 | Hybrid düğümü 19,7 sn, alt span toplamı ~8 sn; ~12 sn izsiz | Gecikme kaynağı görünmüyor (SQL analitik çağrıları span'siz olabilir, ölçülmedi) | Faz 1.4: analitik çağrılara span, smoke set'te ölç |
 
 ## Güvenlik taraması (2026-11-20)
 
@@ -79,4 +84,6 @@ Bu dosya v3 çalışmasının kararlarını, kanıtlarını ve açık maddelerin
 
 ## Sıradaki adım
 
-Faz 1.3: Langfuse'u Docker Compose ile laptopta kur, `OTEL_EXPORTER_OTLP_ENDPOINT` ile bağla, hybrid soruyu Langfuse'ta ağaç olarak gör. B9 (TLS denetimi) Docker'da çıkabilir. Açık: B2.
+Faz 1.4: smoke set (10 soru, golden set dışı) ile kota kontrolü, reasoning effort kararı (`DECISIONS.md`), B12 için analitik çağrılara span, Kaggle GPU'da Ollama ile `gpt-oss:20b` ve local profil trace'i. Açık: B2. Faz 1 sonunda code-review.
+
+Langfuse'u başlatma: `cd infra/langfuse && docker compose up -d`, arayüz http://localhost:3000 (giriş bilgisi `infra/langfuse/.env` içinde `LANGFUSE_INIT_USER_*`).

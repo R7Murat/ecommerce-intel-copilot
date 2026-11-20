@@ -11,7 +11,7 @@ from opentelemetry.trace import StatusCode
 import copilot.agents.knowledge as knowledge
 import copilot.graph as graph
 import copilot.llm as llm
-from copilot.observability import mark_error, span, traced_node
+from copilot.observability import langfuse_exporter_args, mark_error, span, traced_node
 
 EXPORTER = InMemorySpanExporter()
 _provider = TracerProvider()
@@ -70,6 +70,7 @@ def test_chat_span_is_child_and_has_usage(monkeypatch):
     assert chat.attributes["gen_ai.usage.output_tokens"] == 7
     assert chat.attributes["copilot.fallback"] is False
     assert chat.attributes["copilot.cost_usd_list_price"] == pytest.approx(6.9e-06)
+    assert chat.attributes["gen_ai.usage.cost"] == pytest.approx(6.9e-06)
 
 
 def test_unpriced_model_omits_cost(monkeypatch):
@@ -152,3 +153,12 @@ def test_hybrid_question_forms_one_tree(monkeypatch):
     assert len(chats) == 4  # router, knowledge answer, critic, synthesis
     assert {ids[s.parent.span_id] for s in chats} == {
         "invoke_agent supervisor", "invoke_agent hybrid", "invoke_agent critic"}
+
+
+def test_langfuse_exporter_args():
+    env = {"LANGFUSE_HOST": "http://localhost:3000/", "LANGFUSE_PUBLIC_KEY": "pk-lf-a",
+           "LANGFUSE_SECRET_KEY": "sk-lf-b"}
+    args = langfuse_exporter_args(env)
+    assert args["endpoint"] == "http://localhost:3000/api/public/otel/v1/traces"
+    assert args["headers"]["Authorization"] == "Basic cGstbGYtYTpzay1sZi1i"  # pk-lf-a:sk-lf-b
+    assert langfuse_exporter_args({**env, "LANGFUSE_SECRET_KEY": ""}) is None
