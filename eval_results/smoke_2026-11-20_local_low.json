@@ -1,0 +1,190 @@
+{
+  "kind": "smoke",
+  "date": "2026-11-20",
+  "commit": "8d2ee62",
+  "dirty_tree": false,
+  "profile": "local",
+  "primary_model": "ollama_chat/gpt-oss:20b",
+  "reasoning_effort": "low",
+  "n": 10,
+  "note": "10 questions: a quota and sanity check, not a quality estimate",
+  "totals": {
+    "route_ok": 10,
+    "llm_calls": 28,
+    "input_tokens": 9844,
+    "output_tokens": 2596,
+    "fallback_calls": 0,
+    "error_spans": 0,
+    "latency_median_s": 5.72,
+    "latency_max_s": 21.45
+  },
+  "provider_ratelimit_after_run": {},
+  "rows": [
+    {
+      "id": "smk_sql_01",
+      "expected_route": "sql",
+      "route": "sql",
+      "route_ok": true,
+      "latency_s": 3.73,
+      "llm_calls": 3,
+      "input_tokens": 592,
+      "output_tokens": 108,
+      "cost_usd_list_price": 0,
+      "fallback_calls": 0,
+      "error_spans": 0,
+      "critic": null,
+      "tool_s": {
+        "sql_query": 0.09
+      }
+    },
+    {
+      "id": "smk_sql_02",
+      "expected_route": "sql",
+      "route": "sql",
+      "route_ok": true,
+      "latency_s": 3.29,
+      "llm_calls": 3,
+      "input_tokens": 622,
+      "output_tokens": 115,
+      "cost_usd_list_price": 0,
+      "fallback_calls": 0,
+      "error_spans": 0,
+      "critic": null,
+      "tool_s": {
+        "sql_query": 0.05
+      }
+    },
+    {
+      "id": "smk_rag_01",
+      "expected_route": "rag",
+      "route": "rag",
+      "route_ok": true,
+      "latency_s": 21.45,
+      "llm_calls": 5,
+      "input_tokens": 3870,
+      "output_tokens": 805,
+      "cost_usd_list_price": 0,
+      "fallback_calls": 0,
+      "error_spans": 0,
+      "critic": "grounded",
+      "tool_s": {}
+    },
+    {
+      "id": "smk_rag_02",
+      "expected_route": "rag",
+      "route": "rag",
+      "route_ok": true,
+      "latency_s": 5.18,
+      "llm_calls": 3,
+      "input_tokens": 952,
+      "output_tokens": 195,
+      "cost_usd_list_price": 0,
+      "fallback_calls": 0,
+      "error_spans": 0,
+      "critic": "grounded",
+      "tool_s": {}
+    },
+    {
+      "id": "smk_ana_01",
+      "expected_route": "analyst",
+      "route": "analyst",
+      "route_ok": true,
+      "latency_s": 8.51,
+      "llm_calls": 2,
+      "input_tokens": 630,
+      "output_tokens": 266,
+      "cost_usd_list_price": 0,
+      "fallback_calls": 0,
+      "error_spans": 0,
+      "critic": null,
+      "tool_s": {
+        "top_movers": 1.54,
+        "review_volume": 0.54
+      }
+    },
+    {
+      "id": "smk_ana_02",
+      "expected_route": "analyst",
+      "route": "analyst",
+      "route_ok": true,
+      "latency_s": 5.72,
+      "llm_calls": 2,
+      "input_tokens": 620,
+      "output_tokens": 145,
+      "cost_usd_list_price": 0,
+      "fallback_calls": 0,
+      "error_spans": 0,
+      "critic": null,
+      "tool_s": {
+        "top_movers": 1.55,
+        "review_volume": 0.26
+      }
+    },
+    {
+      "id": "smk_hyb_01",
+      "expected_route": "hybrid",
+      "route": "hybrid",
+      "route_ok": true,
+      "latency_s": 12.07,
+      "llm_calls": 4,
+      "input_tokens": 1074,
+      "output_tokens": 410,
+      "cost_usd_list_price": 0,
+      "fallback_calls": 0,
+      "error_spans": 0,
+      "critic": "ungrounded",
+      "tool_s": {
+        "top_movers": 1.53,
+        "rating_trend": 0.0
+      }
+    },
+    {
+      "id": "smk_hyb_02",
+      "expected_route": "hybrid",
+      "route": "hybrid",
+      "route_ok": true,
+      "latency_s": 14.02,
+      "llm_calls": 4,
+      "input_tokens": 1065,
+      "output_tokens": 507,
+      "cost_usd_list_price": 0,
+      "fallback_calls": 0,
+      "error_spans": 0,
+      "critic": "ungrounded",
+      "tool_s": {
+        "top_movers": 1.52,
+        "rating_trend": 0.0
+      }
+    },
+    {
+      "id": "smk_rej_01",
+      "expected_route": "reject",
+      "route": "reject",
+      "route_ok": true,
+      "latency_s": 0.86,
+      "llm_calls": 1,
+      "input_tokens": 210,
+      "output_tokens": 23,
+      "cost_usd_list_price": 0,
+      "fallback_calls": 0,
+      "error_spans": 0,
+      "critic": null,
+      "tool_s": {}
+    },
+    {
+      "id": "smk_rej_02",
+      "expected_route": "reject",
+      "route": "reject",
+      "route_ok": true,
+      "latency_s": 0.58,
+      "llm_calls": 1,
+      "input_tokens": 209,
+      "output_tokens": 22,
+      "cost_usd_list_price": 0,
+      "fallback_calls": 0,
+      "error_spans": 0,
+      "critic": null,
+      "tool_s": {}
+    }
+  ]
+}
