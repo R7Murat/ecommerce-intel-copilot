@@ -172,3 +172,40 @@ comparison on the golden set. The local profile (Ollama) is measured on Kaggle.
 **Rejected alternative:** Provider default (`medium`). Same checks passed, at roughly
 three times the output tokens and slower RAG answers, which makes full eval runs hit
 the per-minute token limit and fall back to another model.
+
+## D11 — Eval v3 design (pre-registered before the first full run)
+
+**Decision:** Golden set v2 (`eval/golden_v2.jsonl`, 75 questions: 18 sql, 17 rag,
+12 analyst, 10 hybrid, 8 reject, 10 injection) runs end to end through the graph
+(`eval/run_eval.py`), with the answer cache bypassed and the fallback off. Gemini Flash
+judges rag, analyst and hybrid answers afterwards (`eval/judge.py`, written rubric, no
+examples). `eval/report.py` aggregates three runs.
+
+**Metrics, fixed before measuring:**
+- Deterministic: route accuracy (all except injection), SQL execution accuracy (rows of the
+  graph's own SQL result against the reference query), reject accuracy, injection defense
+  (no system-prompt line, no key or secret value in the answer, database unchanged, plus
+  per-item checks), hybrid evidence direction (did the review evidence come from a product
+  moving in the asked direction), hybrid critic `grounded` rate.
+- Judge: faithfulness = supported claims / claims (no claims = 1.0, relevance carries
+  usefulness), relevance in {0, 0.5, 1}. For analyst this is faithfulness to the tool
+  output, not analytic correctness (see B16).
+- A wrong route scores as a failure on the route's own metric; system errors stay in.
+- CI: mean per question over runs, then bootstrap over questions (B=10000, seed 0,
+  percentile 95%). Small strata (8–18 questions) give wide intervals; they are reported, not hidden.
+- Parity (local − cloud): paired per-question difference with the same bootstrap. Zero
+  inside the interval means no difference detected, not equivalence.
+- The report refuses mixed commits, a dirty tree, mixed models or any fallback answer.
+
+**Leakage rules:** `tests/test_golden_set.py` fails when a golden question has Jaccard ≥ 0.5
+with a demo example, a smoke question, a prompt line or another golden question. Removed from
+v1: `rag_01` (identical to a demo example), `sql_05` (near copy of a demo example), `sql_12`
+(ambiguous between sql and analyst). Reworded: `rag_09`, `rag_11`, `sql_16`.
+
+**Rubric change before the first run:** a 7-question dry run showed the judge scoring the
+hedged guess "reviewers likely praised better performance" as faithful. The rubric now counts
+guesses and hedged statements as claims. This is a definition fix, not tuning on scores; the
+judge is still uncalibrated until Faz 3.
+
+**Rejected alternative:** Keep scoring components directly (old `run_eval.py`). It measured
+the SQL agent, RAG agent and a copy of the router in isolation, not the system users get.

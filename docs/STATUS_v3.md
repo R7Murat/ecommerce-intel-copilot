@@ -33,6 +33,16 @@ Bu dosya v3 çalışmasının kararlarını, kanıtlarını ve açık maddelerin
 
 **1.4 reasoning effort karar kuralı (ölçümden önce yazıldı, 2026-11-20):** `low`, `medium`, `high` aynı 10 soruluk smoke set'le, TPM beklemesi açık koşulur. Fallback'e düşen satırlar karşılaştırma dışında tutulur ve sayısı raporlanır. Seçim: (1) rota 10/10, (2) SQL rotasında hata yok, (3) RAG ve hybrid critic `grounded` sayısı `medium`'dan en fazla 1 eksik koşullarını sağlayan **en düşük** seviye. Hiçbiri sağlamazsa `medium`. 10 soru kalite kanıtı değildir; karar Faz 2'de golden set üzerinde eşli karşılaştırmayla doğrulanır.
 
+## Faz 2: durum
+
+| Adım | Durum | Kanıt |
+| --- | --- | --- |
+| 2.1 Golden set v2 | Tamam | `eval/golden_v2.jsonl`: 75 soru (18 sql, 17 rag, 12 analyst, 10 hybrid, 8 reject, 10 injection). v1'den 3 soru çıkarıldı, 3 soru yeniden yazıldı (D11). `tests/test_golden_set.py`: şema, demo/smoke/prompt satırlarıyla ve set içinde Jaccard < 0,5, referans SQL çalışıyor. |
+| 2.2 `run_eval.py` graph üzerinden, Gemini judge | Tamam (kod) | `eval/run_eval.py` (graph, önbellek atlanır, fallback kapalı, TPM beklemesi, günlük kota dolunca durur ve kaldığı yerden devam eder), `eval/judge.py`, `eval/report.py` (bootstrap, parite, README tablosu), ortak `eval/harness.py` (smoke da kullanıyor). Metrikler ölçümden önce yazıldı (D11). `tests/test_eval_harness.py`; `pytest` 55 passed. 7 soruluk deneme koşusu (her tipten) uçtan uca çalıştı, dosyaları silindi. |
+| 2.3 3 koşu + bootstrap | Bekliyor | |
+| 2.4 Kaggle local parite | Bekliyor | |
+| 2.5 README tablosu | Kod hazır (`report.py table`) | |
+
 ## Kararlar
 
 | Tarih | Karar | Gerekçe |
@@ -74,6 +84,8 @@ Bu dosya v3 çalışmasının kararlarını, kanıtlarını ve açık maddelerin
 | B13 | `top_movers` her analyst/hybrid sorusunda yeniden hesaplanıyor (4–11 sn), veri salt okunur ve sonuç sabit | Demo gecikmesinin en büyük kalemi | Faz 4 (demo gecikmesi): ön hesaplanmış tablo ya da süreç içi önbellek; önce/sonra ölçümle |
 | B14 | Groq ücretsiz katman dakikalık token limiti 8.000 (yanıt başlığı); 10 soruluk smoke 17.389 token, tek RAG sorusu retry ile 6.780 token | Eval koşusu sınırı aşınca primary sessizce Gemini fallback'e düşüyor (smoke'ta 3 çağrı) | Faz 2: eval'de TPM beklemesi ve fallback kapalı |
 | B15 | Langfuse local (Ollama) çağrılarında "Provided Model Name" sütunu boş; Groq'ta dolu | Model bilgisi metadata'da var (`gen_ai.response.model`, profil, adres), sadece Langfuse sütunu ve model bazlı dashboard etkileniyor; neden doğrulanmadı | Faz 4 (dashboard) öncesi |
+| B16 | `top_movers` ilk ve son yılı tek yorumla olan ürünleri öne alıyor (ilk 8 ürünün hepsi ±4,0; örn. `B0006GCA10`: 2006'da 1 yorum 1,0, 2014'te 1 yorum 5,0). Sıralama mutlak değişimle, eşitlikler asin sırasıyla bozuluyor; hybrid her zaman `movers[0]`'ı inceliyor (şu an bir düşüş) | Analyst/hybrid cevapları istatistiksel gürültüye dayanıyor; "en çok iyileşen" sorusunda kanıt düşen üründen toplanıyor (deneme: `hyb_02`) | Faz 2 ölçümünden sonra: minimum yorum eşiği ve yön parametresi, önce/sonra eşli karşılaştırma |
+| B17 | Judge aynı analyst cevabında iki çağrıda 7 ve 17 iddia saydı | Faithfulness paydası judge'a göre oynuyor | Faz 3 kalibrasyonu; Faz 2 raporunda judge "kalibre değil" diye etiketli |
 
 ## Güvenlik taraması (2026-11-20)
 
@@ -91,6 +103,6 @@ Bu dosya v3 çalışmasının kararlarını, kanıtlarını ve açık maddelerin
 
 ## Sıradaki adım
 
-Faz 1 kapısı geçti. Sırada Faz 2 (uçtan uca offline eval ve parite, PLAN_v3.md §Faz 2): golden set v2, `run_eval.py`'nin `graph.invoke` üzerinden yeniden yazılması, Gemini judge, eval'de fallback kapalı ve TPM beklemesi (B14), 3 koşu + bootstrap aralığı, Kaggle'da local parite. Açık: B2, B11 (hybrid critic hep `ungrounded`), B13, B15. Faz 4 notları: Input/Output metni PII maskelemeyle; dashboard widget'ları ve aylık maliyet/gecikme özeti.
+Faz 2 sürüyor: golden set v2 ve eval kodu hazır (2.1, 2.2). Sırada cloud profilde 3 koşu (`python eval/run_eval.py --run N`, sonra `eval/judge.py`, `eval/report.py summary cloud_low`); bir koşu yaklaşık 100 bin Groq token'ı, günlük limit dolarsa ertesi gün aynı komutla devam. Sonra Kaggle'da local 3 koşu ve parite. D10 notu: low/medium golden set karşılaştırması kota elverirse. Açık: B2, B11, B13, B15, B16, B17.
 
 Langfuse'u başlatma: `cd infra/langfuse && docker compose up -d`, arayüz http://localhost:3000 (giriş bilgisi `infra/langfuse/.env` içinde `LANGFUSE_INIT_USER_*`).
