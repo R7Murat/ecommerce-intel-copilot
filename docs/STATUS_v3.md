@@ -20,6 +20,15 @@ Bu dosya v3 çalışmasının kararlarını, kanıtlarını ve açık maddelerin
 | 0.10 `eval_results/baseline.json` | Tamam (commit 0.11'de) | Geçmiş kayıt, yeni koşu yok. Kaynak: STATUS.md 2026-07-11 satırı, `d4d1e16`. Golden set sha256 (git blob, LF) HEAD ve `d4d1e16`'da aynı. README'den bağlantılı. |
 | 0.11 Kapı ve commit | Tamam | `pytest` 21 passed; README = STATUS.md = baseline.json (9/9 kontrol); değişen dosyalarda anahtar deseni ve `.env` değeri 0; code-review 1 bulgu (README self-judge notu) düzeltildi |
 
+## Faz 1: durum
+
+| Adım | Durum | Kanıt |
+| --- | --- | --- |
+| 1.1 Profiller ve yerel koruma | Tamam | `COPILOT_PROFILE=cloud/local`; `local`'de fallback yok, açılışta fail-closed kontrol (`OLLAMA_NO_CLOUD=1`, loopback adres, Ollama modeli, `-cloud` yasak). `tests/test_profiles.py`: koruma kapatılınca 7/7 test kırıldı, açıkken `pytest` 34 passed. B7: `pysqlite3-binary; sys_platform == "linux"`. |
+| 1.2 `@traced_node`, span'ler, B5 (cevabı üreten model) | Sırada | — |
+| 1.3 Langfuse (Docker Compose, OTLP) | Bekliyor | — |
+| 1.4 Smoke set, reasoning effort, Kaggle GPU | Bekliyor | — |
+
 ## Kararlar
 
 | Tarih | Karar | Gerekçe |
@@ -33,6 +42,8 @@ Bu dosya v3 çalışmasının kararlarını, kanıtlarını ve açık maddelerin
 | 2026-11-20 | Baseline yeni koşu değil, geçmiş kayıt | Llama 3.3 70B kapandı, aynı koşul tekrar üretilemez. Kusurlar (B10, `rag_03`/`rag_10` düzenlemesi) gizlenmeden `caveats`'te. |
 | 2026-11-20 | B7 (pysqlite3 marker) Faz 1'e ertelendi | Ortam kararı; B2 (sürüm eşitleme, lock) ile birlikte ele alınır. Kapı commit'i sadece doküman/kayıt. |
 | 2026-11-20 | `docs/security_report.md` Faz 4'e ertelendi | Tarama özeti burada var; ikinci kopya ayrışır. Rapor S2/S3 kapandıktan sonra gerçek PASS/FAIL ile yazılır. |
+| 2026-11-20 | Ollama Cloud hesabı açılmıyor; `cloud` profil Groq | API kredi istedi (bütçe kuralı). İkinci judge için Ollama Cloud yerine ücretsiz başka bir aile Faz 3'te seçilecek. |
+| 2026-11-20 | `local` profilde fallback kapalı | Her fallback makineden çıkar; yerel modda hata gizlenmez, yükseltilir. |
 | 2026-11-20 | Heyet ve direktör uzlaşırsa adım onay beklemeden uygulanır | Murat'ın talimatı; uzlaşma yoksa sorulur. |
 
 ## Bulgular (Faz 0 sırasında)
@@ -45,7 +56,7 @@ Bu dosya v3 çalışmasının kararlarını, kanıtlarını ve açık maddelerin
 | B4 | Hybrid rotası critic reddettiğinde de `Sources:` satırını ekliyor (`graph.py`) | Kullanılmayan kaynak gösteriliyor | Faz 2 |
 | B5 | Fallback sessiz: cevabın hangi modelden geldiği sonuçta işaretlenmiyor | Eval'de modeller karışabilir, judge yanlılığı geri gelebilir | Faz 1 (trace'e model), Faz 2 (eval'de fallback kapalı) |
 | B6 | `llm` marker'lı canlı testler varsayılan `pytest` koşusunda çalışıyor | Her test koşusu kota harcar | Faz 5 (CI) |
-| B7 | `requirements.txt` içindeki `pysqlite3-binary` Windows'ta kurulmuyor | Yerel kurulum kırılıyor | Önerilen: `; sys_platform == "linux"` marker'ı |
+| B7 | `requirements.txt` içindeki `pysqlite3-binary` Windows'ta kurulmuyor | Yerel kurulum kırılıyor | Kapandı (1.1) |
 | B8 | Rate limit ve soru uzunluğu sınırı yok | Kota tükenmesiyle demo kilitlenebilir | Faz 4 |
 | B9 | Ortamda TLS denetimi var (`self-signed certificate in certificate chain`) | Yerel profil ve Docker'da bağlantı sorunu çıkabilir | Faz 1 |
 | B10 | Eski eval'de judge = üreten model (`run_eval.py` judge'ı `ask_llm` ile çağırıyor) | Faithfulness 1.00 ve relevance 0.87 self-judged; yanlılık riski | Faz 2: Gemini judge, fallback kapalı |
@@ -66,4 +77,4 @@ Bu dosya v3 çalışmasının kararlarını, kanıtlarını ve açık maddelerin
 
 ## Sıradaki adım
 
-Faz 0 kapısı geçti. Sırada Faz 1: instrumentation ve model katmanı (`@traced_node`, Langfuse, `cloud`/`local` profilleri, fail-closed yerel mod, smoke set). Ek olarak B2, B5, B7, B9. Not: plandaki "Ollama Cloud hesabı" maddesi Groq kararıyla yeniden değerlendirilecek.
+Faz 1.2: `src/copilot/observability.py` ve `@traced_node` (span adları, üst-alt ilişkisi, hata işareti), `ask_llm`'in cevabı üreten modeli kaydetmesi (B5). Sonra 1.3 Langfuse. Açık: B2, B9.

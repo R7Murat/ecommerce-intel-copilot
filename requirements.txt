@@ -5,7 +5,7 @@ chromadb>=0.5
 sentence-transformers>=3.0
 huggingface_hub>=0.23
 streamlit>=1.35
-pysqlite3-binary
+pysqlite3-binary; sys_platform == "linux"
 opentelemetry-api==1.43.0
 opentelemetry-sdk==1.43.0
 opentelemetry-exporter-otlp-proto-http==1.43.0
