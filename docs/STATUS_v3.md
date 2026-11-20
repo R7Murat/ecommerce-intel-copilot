@@ -25,8 +25,8 @@ Bu dosya v3 çalışmasının kararlarını, kanıtlarını ve açık maddelerin
 | Adım | Durum | Kanıt |
 | --- | --- | --- |
 | 1.1 Profiller ve yerel koruma | Tamam | `COPILOT_PROFILE=cloud/local`; `local`'de fallback yok, açılışta fail-closed kontrol (`OLLAMA_NO_CLOUD=1`, loopback adres, Ollama modeli, `-cloud` yasak). `tests/test_profiles.py`: koruma kapatılınca 7/7 test kırıldı, açıkken `pytest` 34 passed. B7: `pysqlite3-binary; sys_platform == "linux"`. |
-| 1.2 `@traced_node`, span'ler, B5 (cevabı üreten model) | Sırada | — |
-| 1.3 Langfuse (Docker Compose, OTLP) | Bekliyor | — |
+| 1.2 `@traced_node`, span'ler, B5 | Tamam | `observability.py`: `invoke_agent` (kök `copilot`, supervisor, ajanlar, critic), `retrieval`, `chat`, `execute_tool`. Chat span'inde istenen/dönen model, `copilot.fallback`, profil, token, liste fiyatı (B5). Prompt/cevap metni yazılmıyor. Hybrid soru tek ağaç (testte). Dekoratör kapatılınca 4 test kırıldı; `pytest` 42 passed. Canlı Groq çağrısında token ve maliyet dolu. |
+| 1.3 Langfuse (Docker Compose, OTLP) | Sırada | — |
 | 1.4 Smoke set, reasoning effort, Kaggle GPU | Bekliyor | — |
 
 ## Kararlar
@@ -44,6 +44,8 @@ Bu dosya v3 çalışmasının kararlarını, kanıtlarını ve açık maddelerin
 | 2026-11-20 | `docs/security_report.md` Faz 4'e ertelendi | Tarama özeti burada var; ikinci kopya ayrışır. Rapor S2/S3 kapandıktan sonra gerçek PASS/FAIL ile yazılır. |
 | 2026-11-20 | Ollama Cloud hesabı açılmıyor; `cloud` profil Groq | API kredi istedi (bütçe kuralı). İkinci judge için Ollama Cloud yerine ücretsiz başka bir aile Faz 3'te seçilecek. |
 | 2026-11-20 | `local` profilde fallback kapalı | Her fallback makineden çıkar; yerel modda hata gizlenmez, yükseltilir. |
+| 2026-11-20 | Maliyet `copilot.cost_usd_list_price` olarak, litellm'in çağrı anındaki hesabından | Groq ücretsiz katmanda gerçek ödeme 0; alan adı liste fiyatı olduğunu söylüyor. `completion_cost(resp)` Groq'ta `groq/` öneki düştüğü için fiyat bulamıyordu. |
+| 2026-11-20 | Span'lere prompt ve cevap metni yazılmıyor | Soru kaydı ve PII maskeleme Faz 4'te; o zamana kadar sadece metadata. |
 | 2026-11-20 | Heyet ve direktör uzlaşırsa adım onay beklemeden uygulanır | Murat'ın talimatı; uzlaşma yoksa sorulur. |
 
 ## Bulgular (Faz 0 sırasında)
@@ -54,7 +56,7 @@ Bu dosya v3 çalışmasının kararlarını, kanıtlarını ve açık maddelerin
 | B2 | Yerel Python 3.11.9, canlı demo Python 3.14 | Parite ve tekrarlanabilirlik riski | Faz 1: sürüm eşitleme / lock dosyası |
 | B3 | gpt-oss SQL cevaplarında `[asin]` / `【asin】` artığı | Biçim kalitesi | Faz 2'de golden set üzerinde ölçülecek |
 | B4 | Hybrid rotası critic reddettiğinde de `Sources:` satırını ekliyor (`graph.py`) | Kullanılmayan kaynak gösteriliyor | Faz 2 |
-| B5 | Fallback sessiz: cevabın hangi modelden geldiği sonuçta işaretlenmiyor | Eval'de modeller karışabilir, judge yanlılığı geri gelebilir | Faz 1 (trace'e model), Faz 2 (eval'de fallback kapalı) |
+| B5 | Fallback sessiz: cevabın hangi modelden geldiği sonuçta işaretlenmiyor | Eval'de modeller karışabilir, judge yanlılığı geri gelebilir | Faz 1 kısmı kapandı (1.2: trace'te model ve fallback); Faz 2: eval'de fallback kapalı |
 | B6 | `llm` marker'lı canlı testler varsayılan `pytest` koşusunda çalışıyor | Her test koşusu kota harcar | Faz 5 (CI) |
 | B7 | `requirements.txt` içindeki `pysqlite3-binary` Windows'ta kurulmuyor | Yerel kurulum kırılıyor | Kapandı (1.1) |
 | B8 | Rate limit ve soru uzunluğu sınırı yok | Kota tükenmesiyle demo kilitlenebilir | Faz 4 |
@@ -77,4 +79,4 @@ Bu dosya v3 çalışmasının kararlarını, kanıtlarını ve açık maddelerin
 
 ## Sıradaki adım
 
-Faz 1.2: `src/copilot/observability.py` ve `@traced_node` (span adları, üst-alt ilişkisi, hata işareti), `ask_llm`'in cevabı üreten modeli kaydetmesi (B5). Sonra 1.3 Langfuse. Açık: B2, B9.
+Faz 1.3: Langfuse'u Docker Compose ile laptopta kur, `OTEL_EXPORTER_OTLP_ENDPOINT` ile bağla, hybrid soruyu Langfuse'ta ağaç olarak gör. B9 (TLS denetimi) Docker'da çıkabilir. Açık: B2.

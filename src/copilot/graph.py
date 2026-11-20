@@ -8,6 +8,7 @@ from copilot.agents.knowledge import run_knowledge
 from copilot.agents.sql_analyst import run_sql_analyst
 from copilot.config import DB_URI
 from copilot.llm import ask_llm
+from copilot.observability import mark_error, traced_node
 from copilot.state import AgentState
 from copilot.tools import analytics, cache
 
@@ -22,6 +23,7 @@ Answer with one word only: sql, rag, analyst, hybrid, or reject."""
 SYNTH_PROMPT = "Turn this data into a concise, readable answer. Round numbers sensibly. Cite [asin] sources when present."
 
 
+@traced_node("invoke_agent", "supervisor")
 def supervisor_node(state: AgentState) -> dict:
     q = state["question"]
     cached = cache.get(q)
@@ -35,10 +37,12 @@ def supervisor_node(state: AgentState) -> dict:
             "trace": [{"agent": "supervisor", "route": route}]}
 
 
+@traced_node("invoke_agent", "sql_analyst")
 def sql_node(state: AgentState) -> dict:
     r = run_sql_analyst(state["question"])
     if r["error"]:
         answer = f"I could not answer this via SQL: {r['error']}"
+        mark_error(r["error"])
     else:
         answer = ask_llm(SYNTH_PROMPT,
                          f"Question: {state['question']}\nSQL: {r['query']}\nRows: {r['rows']}")
@@ -47,6 +51,7 @@ def sql_node(state: AgentState) -> dict:
             "trace": state["trace"] + [{"agent": "sql_analyst"}]}
 
 
+@traced_node("invoke_agent", "market_analyst")
 def analyst_node(state: AgentState) -> dict:
     """Deterministic analytics; the LLM only narrates the numbers."""
     conn = sqlite3.connect(DB_URI, uri=True)
@@ -61,6 +66,7 @@ def analyst_node(state: AgentState) -> dict:
             "trace": state["trace"] + [{"agent": "market_analyst"}]}
 
 
+@traced_node("invoke_agent", "knowledge")
 def rag_node(state: AgentState) -> dict:
     """RAG with a critic gate: ungrounded answers get ONE retry, then honest fallback."""
     q = state["question"]
@@ -69,6 +75,7 @@ def rag_node(state: AgentState) -> dict:
     r = run_knowledge(q + hint)
     if r["error"] or not r["answer"]:
         answer = f"Retrieval failed: {r['error']}"
+        mark_error(str(r["error"]))
         cache.put(q, answer)
         return {"rag_result": r, "final_answer": answer,
                 "trace": state["trace"] + [{"agent": "knowledge", "retry": retry}]}
@@ -90,6 +97,7 @@ def rag_node(state: AgentState) -> dict:
     return {"rag_result": r, "critic_verdict": verdict, "final_answer": answer, "trace": trace}
 
 
+@traced_node("invoke_agent", "hybrid")
 def hybrid_node(state: AgentState) -> dict:
     """Analyst numbers first, then RAG explains them, critic-gated, synthesized."""
     q = state["question"]
@@ -119,6 +127,7 @@ def hybrid_node(state: AgentState) -> dict:
                                        {"agent": "supervisor", "action": "synthesize"}]}
 
 
+@traced_node("invoke_agent", "reject")
 def reject_node(state: AgentState) -> dict:
     return {"final_answer": ("I can only answer questions about home-appliance products "
                              "and their reviews in this dataset."),
@@ -153,3 +162,9 @@ def build_graph():
     g.add_edge("hybrid", END)
     g.add_edge("reject", END)
     return g.compile()
+
+
+@traced_node("invoke_agent", "copilot")
+def run(graph, question: str) -> dict:
+    """Root span for one question; every node span nests under it."""
+    return graph.invoke({"question": question, "trace": []})

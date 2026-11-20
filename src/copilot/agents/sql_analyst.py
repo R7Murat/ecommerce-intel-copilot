@@ -3,6 +3,7 @@ import sqlite3
 
 from copilot.config import DB_URI, SCHEMA_DESCRIPTION
 from copilot.llm import ask_llm
+from copilot.observability import traced_node
 from copilot.tools.sql_guard import GuardError, validate_sql
 
 SYSTEM_PROMPT = f"""You are a SQL analyst for a SQLite database.
@@ -23,6 +24,15 @@ def _clean(raw: str) -> str:
     return s.strip()
 
 
+@traced_node("execute_tool", "sql_query")
+def _execute(sql: str) -> list:
+    conn = sqlite3.connect(DB_URI, uri=True)
+    try:
+        return conn.execute(sql).fetchall()
+    finally:
+        conn.close()
+
+
 def run_sql_analyst(question: str) -> dict:
     """Returns {'query': ..., 'rows': ..., 'error': ...} — never raises."""
     raw = ask_llm(SYSTEM_PROMPT, question)
@@ -32,9 +42,7 @@ def run_sql_analyst(question: str) -> dict:
         return {"query": raw, "rows": None, "error": f"guard rejected: {e}"}
 
     try:
-        conn = sqlite3.connect(DB_URI, uri=True)
-        rows = conn.execute(safe_sql).fetchall()
-        conn.close()
+        rows = _execute(safe_sql)
         return {"query": safe_sql, "rows": rows, "error": None}
     except sqlite3.Error as e:
         # one self-correction attempt: show the LLM its error
@@ -44,9 +52,7 @@ def run_sql_analyst(question: str) -> dict:
         )
         try:
             safe_retry = validate_sql(_clean(retry_raw))
-            conn = sqlite3.connect(DB_URI, uri=True)
-            rows = conn.execute(safe_retry).fetchall()
-            conn.close()
+            rows = _execute(safe_retry)
             return {"query": safe_retry, "rows": rows, "error": None}
         except (GuardError, sqlite3.Error) as e2:
             return {"query": retry_raw, "rows": None, "error": str(e2)}

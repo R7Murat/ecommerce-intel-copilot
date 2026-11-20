@@ -20,7 +20,8 @@ if not (DATA_DIR / "chroma").exists():
                       repo_type="dataset", local_dir=DATA_DIR)
 # ----------------------------------------------------------------------
 
-from copilot.graph import build_graph
+from copilot.graph import build_graph, run
+from copilot.observability import setup_tracing
 
 st.set_page_config(page_title="E-Commerce Intelligence Copilot", page_icon="🛒", layout="wide")
 st.title("🛒 E-Commerce Product Intelligence Copilot")
@@ -30,6 +31,7 @@ st.caption("Multi-agent RAG over Amazon Appliances reviews (2003–2023). "
 
 @st.cache_resource
 def get_graph():
+    setup_tracing()  # no-op unless OTEL_EXPORTER_OTLP_ENDPOINT is set
     return build_graph()
 
 
@@ -51,7 +53,7 @@ q = st.text_input("Ask a question about appliance products and reviews:",
 if st.button("Ask", type="primary") and q.strip():
     t0 = time.time()
     with st.spinner("Agents working..."):
-        result = get_graph().invoke({"question": q.strip(), "trace": []})
+        result = run(get_graph(), q.strip())
     latency = time.time() - t0
 
     col_a, col_t = st.columns([2, 1])

@@ -3,6 +3,7 @@ import json
 import re
 
 from copilot.llm import ask_llm
+from copilot.observability import mark_error, set_attrs, traced_node
 
 CRITIC_PROMPT = """You are a strict verifier. Given source material and a draft answer,
 judge whether every factual claim in the answer is supported by the sources.
@@ -32,6 +33,7 @@ def _parse(raw: str) -> dict:
     return {"verdict": verdict, "issues": issues}
 
 
+@traced_node("invoke_agent", "critic")
 def run_critic(draft_answer: str, sources_text: str) -> dict:
     """Returns {'verdict': ..., 'issues': [...]} — never raises."""
     try:
@@ -39,6 +41,9 @@ def run_critic(draft_answer: str, sources_text: str) -> dict:
             CRITIC_PROMPT,
             f"Sources:\n{sources_text}\n\nDraft answer:\n{draft_answer}",
         )
-        return _parse(raw)
+        verdict = _parse(raw)
+        set_attrs({"copilot.critic.verdict": verdict["verdict"]})
+        return verdict
     except Exception as e:
+        mark_error(str(e))
         return {"verdict": "ungrounded", "issues": [f"critic error: {e}"]}

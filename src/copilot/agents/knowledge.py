@@ -4,6 +4,7 @@ from chromadb.utils import embedding_functions
 
 from copilot.config import REPO_ROOT
 from copilot.llm import ask_llm
+from copilot.observability import mark_error, set_attrs, span
 
 TOP_K = 6
 
@@ -24,7 +25,10 @@ def run_knowledge(question: str, where: dict | None = None) -> dict:
     """Returns {'answer': ..., 'sources': [...], 'error': ...} — never raises."""
     try:
         coll = _client.get_collection("reviews_full", embedding_function=_embed_fn)
-        res = coll.query(query_texts=[question], n_results=TOP_K, where=where)
+        with span("retrieval", "reviews_full"):
+            res = coll.query(query_texts=[question], n_results=TOP_K, where=where)
+            set_attrs({"copilot.retrieval.top_k": TOP_K,
+                       "copilot.retrieval.returned": len(res["documents"][0])})
         docs = res["documents"][0]
         metas = res["metadatas"][0]
         if not docs:
@@ -38,4 +42,5 @@ def run_knowledge(question: str, where: dict | None = None) -> dict:
         sources = sorted({m["parent_asin"] for m in metas})
         return {"answer": answer, "sources": sources, "context": context, "error": None}
     except Exception as e:
+        mark_error(str(e))
         return {"answer": None, "sources": [], "context": "", "error": str(e)}
