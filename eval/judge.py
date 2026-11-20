@@ -51,10 +51,14 @@ def judge(question: str, context: str, answer: str) -> dict:
                                         {"role": "user", "content": user}])
             return parse(resp.choices[0].message.content or "")
         except RateLimitError as e:
+            if "PerDay" in str(e) or "per day" in str(e).lower():
+                sys.exit(f"judge daily quota reached ({JUDGE_MODEL}); rerun later to resume")
             last = e
             time.sleep(60)
         except (ValueError, KeyError, TypeError, json.JSONDecodeError) as e:
             last = e  # malformed output: retry once more, then record as missing
+    if isinstance(last, RateLimitError):  # not the answer's fault: leave it for the next run
+        sys.exit(f"judge rate limited ({JUDGE_MODEL}); rerun later to resume")
     return {"judge_error": f"{type(last).__name__}: {last}"[:200]}
 
 

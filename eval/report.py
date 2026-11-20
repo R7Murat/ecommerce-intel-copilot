@@ -71,12 +71,15 @@ def check(runs: list[list[dict]]) -> dict:
     assert not any(r["dirty_tree"] for r in rows), "run made from a dirty tree"
     assert same_generation_code(commits), f"generation code differs across {commits}"
     assert len(models) == 1, f"mixed models: {models}"
+    judges = {r["judge_model"] for r in rows if "judge_model" in r}
+    assert len(judges) <= 1, f"mixed judge models: {judges}"
     assert all(r.get("fallback_calls", 0) == 0 for r in rows), "fallback answers present"
     ids = [sorted(r["id"] for r in run) for run in runs]
     assert all(i == ids[0] for i in ids), "runs cover different questions"
     return {"commits": sorted(commits), "primary_model": models.pop(),
             "profile": rows[0]["profile"], "reasoning_effort": rows[0]["reasoning_effort"],
-            "runs": len(runs), "n_questions": len(ids[0])}
+            "runs": len(runs), "n_questions": len(ids[0]),
+            "judge_model": judges.pop() if judges else None}
 
 
 def per_question(runs: list[list[dict]], types: set, fn) -> dict[str, float]:
