@@ -12,6 +12,7 @@ import datetime
 import json
 import random
 import statistics
+import subprocess
 import sys
 from pathlib import Path
 
@@ -52,17 +53,28 @@ def load_runs(tag: str) -> list[list[dict]]:
     return runs
 
 
+# Files that shape an answer; commits that differ only elsewhere (docs, scripts) still compare.
+GENERATION_PATHS = ["src", "eval/run_eval.py", "eval/harness.py", "eval/golden_v2.jsonl"]
+
+
+def same_generation_code(commits: set[str]) -> bool:
+    first, *rest = sorted(commits)
+    return all(subprocess.run(["git", "diff", "--quiet", first, c, "--", *GENERATION_PATHS],
+                              cwd=ROOT).returncode == 0 for c in rest)
+
+
 def check(runs: list[list[dict]]) -> dict:
     """Refuse to aggregate mixed code, mixed models, fallback answers or incomplete runs."""
     rows = [r for run in runs for r in run]
-    commits = {(r["commit"], r["dirty_tree"]) for r in rows}
+    commits = {r["commit"] for r in rows}
     models = {r["primary_model"] for r in rows}
-    assert len(commits) == 1 and not next(iter(commits))[1], f"mixed or dirty code: {commits}"
+    assert not any(r["dirty_tree"] for r in rows), "run made from a dirty tree"
+    assert same_generation_code(commits), f"generation code differs across {commits}"
     assert len(models) == 1, f"mixed models: {models}"
     assert all(r.get("fallback_calls", 0) == 0 for r in rows), "fallback answers present"
     ids = [sorted(r["id"] for r in run) for run in runs]
     assert all(i == ids[0] for i in ids), "runs cover different questions"
-    return {"commit": next(iter(commits))[0], "primary_model": models.pop(),
+    return {"commits": sorted(commits), "primary_model": models.pop(),
             "profile": rows[0]["profile"], "reasoning_effort": rows[0]["reasoning_effort"],
             "runs": len(runs), "n_questions": len(ids[0])}
 
@@ -137,7 +149,7 @@ def parity(tag_a: str, tag_b: str) -> Path:
 
 def table(path: str) -> str:
     d = json.loads(Path(path).read_text(encoding="utf-8"))
-    lines = [f"Measured {d['date']}, commit `{d['commit']}`, {d['primary_model']} "
+    lines = [f"Measured {d['date']}, commit `{', '.join(d['commits'])}`, {d['primary_model']} "
              f"({d['profile']}, effort {d['reasoning_effort']}), {d['runs']} runs, "
              f"golden set v2 ({d['n_questions']} questions). Source: `{Path(path).name}`.", "",
              "| Metric | Mean | 95% CI | n |", "|---|---|---|---|"]
