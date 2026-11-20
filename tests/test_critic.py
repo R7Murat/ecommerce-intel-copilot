@@ -17,7 +17,7 @@ def test_parse_fails_safe_on_garbage():
 
 @pytest.mark.llm
 def test_grounded_answer_passes():
-    r = run_critic("Users report leaking after 15 months [src].", SOURCES)
+    r = run_critic("The ice maker leaks after 15 months [src].", SOURCES)
     assert r["verdict"] == "grounded"
 
 

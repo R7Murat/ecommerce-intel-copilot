@@ -1,9 +1,11 @@
 .env
+.streamlit/secrets.toml
 .venv/
 __pycache__/
 *.pyc
 data/*.db
 data/chroma/
+data/answer_cache.json
 .ipynb_checkpoints/
 eval/last_run_errors.log
 infra/terraform/terraform.tfvars

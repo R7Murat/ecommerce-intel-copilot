@@ -1,14 +1,18 @@
 """Central configuration: models, paths, schema description."""
+import os
 from pathlib import Path
+
+from dotenv import load_dotenv
+
+load_dotenv()  # must run before any os.getenv below
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DB_PATH = REPO_ROOT / "data" / "products.db"
 DB_URI = f"file:{DB_PATH}?mode=ro"
 
-PRIMARY_MODEL = "groq/llama-3.3-70b-versatile"
-FALLBACK_MODEL = "gemini/gemini-2.5-flash"
-# PRIMARY_MODEL = "gemini/gemini-2.5-flash"
-# FALLBACK_MODEL = "groq/llama-3.3-70b-versatile"
+# Override via PRIMARY_MODEL / FALLBACK_MODEL in .env (litellm model IDs).
+PRIMARY_MODEL = os.getenv("PRIMARY_MODEL", "groq/openai/gpt-oss-20b")
+FALLBACK_MODEL = os.getenv("FALLBACK_MODEL", "gemini/gemini-2.5-flash")
 
 SCHEMA_DESCRIPTION = """
 Tables:
